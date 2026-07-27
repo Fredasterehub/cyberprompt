@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CYBERPROMPT — your prompts jack in raw, they jack out preem</title>
+<meta name="description" content="A Claude Code hook that rewrites your prompts in the millisecond before inference — guarded by deterministic gates, narrated by a rogue daemon, levelled by sync depth.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230a0e1a'/%3E%3Cpath d='M8 6 L24 16 L8 26 Z' fill='%2300e5ff'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg: oklch(14% 0.02 260);
+    --bg-raised: oklch(18% 0.025 260);
+    --ink: oklch(92% 0.01 220);
+    --ink-dim: oklch(65% 0.02 230);
+    --cyan: oklch(85% 0.15 195);
+    --magenta: oklch(68% 0.28 340);
+    --yellow: oklch(90% 0.18 100);
+    --line: oklch(35% 0.04 240);
+    --mono: ui-monospace, "JetBrains Mono", "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    --chamfer: polygon(0 12px, 12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+  }
+  *{ box-sizing:border-box; margin:0; padding:0 }
+  html{ scroll-behavior:smooth }
+  body{
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 15px;
+    line-height: 1.65;
+    overflow-x: hidden;
+  }
+  ::selection{ background: var(--magenta); color: var(--bg) }
+
+  /* ── CRT scanlines ─────────────────────────────── */
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:9;
+    background: repeating-linear-gradient(0deg,
+      transparent 0 2px, oklch(0% 0 0 / .07) 2px 3px);
+  }
+  body::after{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:8;
+    background: radial-gradient(ellipse at 50% 40%, transparent 55%, oklch(0% 0 0 / .45));
+  }
+
+  .wrap{ max-width: 940px; margin: 0 auto; padding: 0 20px }
+
+  /* ── status bar ────────────────────────────────── */
+  .statusbar{
+    display:flex; gap:1.5rem; flex-wrap:wrap; align-items:center;
+    padding:.55rem 20px; font-size:.72rem; letter-spacing:.08em;
+    color:var(--ink-dim); border-bottom:1px solid var(--line);
+    text-transform:uppercase;
+  }
+  .statusbar .dot{ color:var(--cyan) }
+  .statusbar .r{ margin-left:auto; color:var(--yellow) }
+
+  /* ── hero ──────────────────────────────────────── */
+  .hero{ padding: 5.5rem 0 4rem; position:relative }
+  .hero .pre{ color:var(--magenta); font-size:.8rem; letter-spacing:.35em; text-transform:uppercase; margin-bottom:1.2rem }
+  h1{
+    font-size: clamp(2.6rem, 8vw, 5.2rem);
+    letter-spacing:.04em; line-height:1; font-weight:700;
+    color:var(--cyan); position:relative; width:fit-content;
+    text-shadow: 0 0 22px oklch(85% 0.15 195 / .45);
+  }
+  h1 span{ color:var(--ink) }
+  @media (prefers-reduced-motion: no-preference){
+    h1:hover{ animation: glitch .34s steps(2) 2 }
+    @keyframes glitch{
+      25%{ transform:translate(2px,-1px); text-shadow:-3px 0 var(--magenta), 3px 0 var(--yellow) }
+      50%{ transform:translate(-2px,1px); text-shadow: 3px 0 var(--magenta),-3px 0 var(--cyan) }
+      75%{ transform:translate(1px,0);   text-shadow:-2px 0 var(--yellow), 2px 0 var(--magenta) }
+    }
+    .cursor{ animation: blink 1.1s step-end infinite }
+    @keyframes blink{ 50%{ opacity:0 } }
+  }
+  .hero .tag{
+    margin-top:1.6rem; font-size:1.05rem; color:var(--ink);
+    max-width:34rem;
+  }
+  .hero .tag b{ color:var(--yellow); font-weight:700 }
+  .hero .sub{ margin-top:.8rem; color:var(--ink-dim); max-width:40rem; font-size:.9rem }
+  .cursor{ display:inline-block; width:.6em; background:var(--cyan); height:1em; vertical-align:-.1em; margin-left:.15em }
+
+  .cta{ margin-top:2.2rem; display:flex; gap:1rem; flex-wrap:wrap }
+  .btn{
+    display:inline-block; padding:.7rem 1.4rem; text-decoration:none;
+    font-family:var(--mono); font-size:.85rem; letter-spacing:.12em; text-transform:uppercase;
+    clip-path: var(--chamfer);
+  }
+  .btn-primary{ background:var(--cyan); color:var(--bg); font-weight:700 }
+  .btn-primary:hover{ background:var(--yellow) }
+  .btn-ghost{ color:var(--cyan); border:1px solid var(--cyan); background:oklch(85% 0.15 195 / .06) }
+  .btn-ghost:hover{ color:var(--yellow); border-color:var(--yellow) }
+
+  /* ── terminal window ───────────────────────────── */
+  .term{
+    background: var(--bg-raised); border:1px solid var(--line);
+    clip-path: var(--chamfer); margin-top:3.2rem;
+    box-shadow: 0 0 40px oklch(85% 0.15 195 / .07);
+  }
+  .term-bar{
+    display:flex; align-items:center; gap:.5rem;
+    padding:.5rem .9rem; border-bottom:1px solid var(--line);
+    font-size:.7rem; color:var(--ink-dim); letter-spacing:.1em;
+  }
+  .term-bar i{ width:.55rem; height:.55rem; border-radius:50%; display:inline-block }
+  .term-bar i:nth-child(1){ background:var(--magenta) }
+  .term-bar i:nth-child(2){ background:var(--yellow) }
+  .term-bar i:nth-child(3){ background:var(--cyan) }
+  .term-bar span{ margin-left:.5rem }
+  .term pre{
+    padding:1.1rem 1.2rem; overflow-x:auto; font-size:.82rem; line-height:1.7;
+    color:var(--ink-dim);
+  }
+  .term .hd{ color:var(--cyan) }
+  .term .lv{ color:var(--yellow) }
+  .term .qt{ color:var(--magenta); font-style:italic }
+  .term .ok{ color:var(--ink) }
+
+  /* ── sections ──────────────────────────────────── */
+  section{ padding: 4.2rem 0 }
+  h2{
+    font-size:1.05rem; letter-spacing:.3em; text-transform:uppercase;
+    color:var(--magenta); margin-bottom:2.2rem;
+  }
+  h2::before{ content:"▸ "; color:var(--cyan) }
+
+  /* defense grid */
+  .grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:1.1rem }
+  .card{
+    background:var(--bg-raised); border:1px solid var(--line);
+    padding:1.2rem 1.3rem; clip-path:var(--chamfer);
+  }
+  .card:hover{ border-color:var(--cyan) }
+  .card h3{ font-size:.85rem; letter-spacing:.12em; text-transform:uppercase; color:var(--cyan); margin-bottom:.6rem }
+  .card p{ font-size:.83rem; color:var(--ink-dim) }
+  .card p code{ color:var(--yellow); font-size:.78rem }
+
+  /* sync timeline */
+  .sync{ list-style:none; position:relative; padding-left:2rem }
+  .sync::before{
+    content:""; position:absolute; left:.55rem; top:.4rem; bottom:.4rem;
+    width:2px; background:linear-gradient(var(--cyan), var(--magenta));
+  }
+  .sync li{ position:relative; padding:0 0 1.6rem 0 }
+  .sync li::before{
+    content:""; position:absolute; left:-1.75rem; top:.45rem;
+    width:.7rem; height:.7rem; background:var(--bg);
+    border:2px solid var(--cyan); transform:rotate(45deg);
+  }
+  .sync li:nth-child(n+6)::before{ border-color:var(--magenta) }
+  .sync .xp{ color:var(--yellow); font-size:.75rem; letter-spacing:.15em }
+  .sync .ttl{ color:var(--cyan); font-weight:700; letter-spacing:.06em }
+  .sync li:last-child .ttl{ color:var(--magenta); text-shadow:0 0 14px oklch(68% 0.28 340 / .5) }
+  .sync p{ color:var(--ink-dim); font-size:.85rem; max-width:36rem }
+
+  /* gates flow */
+  .gates pre{
+    background:var(--bg-raised); border:1px solid var(--line); clip-path:var(--chamfer);
+    padding:1.3rem 1.4rem; overflow-x:auto; font-size:.8rem; line-height:1.8; color:var(--ink-dim);
+  }
+  .gates .g{ color:var(--cyan) } .gates .f{ color:var(--magenta) } .gates .s{ color:var(--yellow) }
+
+  /* install */
+  .install pre{
+    background:oklch(10% 0.02 260); border:1px solid var(--cyan);
+    clip-path:var(--chamfer); padding:1.2rem 1.4rem; overflow-x:auto;
+    font-size:.85rem; line-height:1.9;
+  }
+  .install .c{ color:var(--ink-dim) } .install .k{ color:var(--cyan) }
+  .install p{ color:var(--ink-dim); font-size:.85rem; margin-top:1rem; max-width:38rem }
+  .install p code{ color:var(--yellow) }
+
+  /* lore */
+  .lore blockquote{
+    border-left:2px solid var(--magenta); padding:.2rem 0 .2rem 1.4rem;
+    color:var(--ink-dim); font-size:.92rem; max-width:38rem; font-style:italic;
+  }
+  .lore blockquote b{ color:var(--ink); font-style:normal }
+  .lore .sig{ margin-top:1rem; color:var(--magenta); font-size:.8rem; letter-spacing:.15em }
+  .lore a{ color:var(--cyan) }
+
+  footer{
+    border-top:1px solid var(--line); padding:2.5rem 20px 3.5rem;
+    text-align:center; color:var(--ink-dim); font-size:.78rem; letter-spacing:.08em;
+  }
+  footer .q{ color:var(--ink); font-style:italic; margin-bottom:.8rem; font-size:.9rem }
+  footer a{ color:var(--cyan); text-decoration:none }
+  footer a:hover{ color:var(--yellow) }
+</style>
+</head>
+<body>
+
+<div class="statusbar wrap" style="max-width:none">
+  <span><span class="dot">●</span> INTERSTICE // ONLINE</span>
+  <span>DAEMON: WORDRUNNER.EXE</span>
+  <span>GATES: ARMED</span>
+  <span class="r">EDDIES = TOKENS</span>
+</div>
+
+<header class="hero wrap">
+  <div class="pre">// claude code · userpromptsubmit hook</div>
+  <h1>CYBER<span>PROMPT</span><span class="cursor"></span></h1>
+  <p class="tag">Your prompts jack in raw. They jack out <b>preem</b>.</p>
+  <p class="sub">A hook that rewrites your prompts in the millisecond before inference —
+  guarded by deterministic gates, narrated by a rogue daemon, levelled by an XP
+  system that deepens the more you run. Your original words stay gospel.</p>
+  <div class="cta">
+    <a class="btn btn-primary" href="#install">JACK IN</a>
+    <a class="btn btn-ghost" href="https://github.com/Fredasterehub/cyberprompt">SOURCE ▸ GITHUB</a>
+  </div>
+
+  <div class="term">
+    <div class="term-bar"><i></i><i></i><i></i><span>operator@zero — the Interstice</span></div>
+    <pre><span class="hd">⟨ WORDRUNNER.EXE ⟩</span> <span class="lv">LVL 3 · Half-Sync ▸ 287 XP ▸ next @ 500 XP</span>
+<span class="qt">Sync at fifty percent. Sometimes I start the sentence before you do.</span>
+---
+<span class="ok">Objective: identify which container is leaking memory, then report. No fixes.</span>
+<span class="ok">Constraints (each traceable to the original):</span>
+<span class="ok">  - do not kill any process          [source: "tue rien hein"]</span>
+<span class="ok">  - report only, await my decision   [source: "juste dis moi ce que tu vois"]</span>
+<span class="ok">Non-binding inference: memory growth started with last night's deploy.</span></pre>
+  </div>
+</header>
+
+<section class="wrap">
+  <h2>Why it doesn't betray you</h2>
+  <div class="grid">
+    <div class="card"><h3>Original = gospel</h3>
+      <p>The rewrite is injected as an <em>advisory</em> contract. On any conflict,
+      your original prompt wins. The daemon has seen what happens otherwise —
+      it <em>is</em> what happens otherwise.</p></div>
+    <div class="card"><h3>Proof-carrying rewrites</h3>
+      <p>Structured JSON only: every explicit requirement backed by a
+      <code>source_quote</code> — a verbatim substring of your prompt.
+      Inferences are quarantined as non-binding.</p></div>
+    <div class="card"><h3>Deterministic gates</h3>
+      <p>Pure bash+jq review: schema check, quote-substring check, length
+      ceiling. Any failure → your original passes untouched. ICE doesn't
+      negotiate.</p></div>
+    <div class="card"><h3>Injection containment</h3>
+      <p>The forge call is non-agentic: <code>--safe-mode --tools ""</code>.
+      Pasted logs in your prompt can't hijack a daemon that has no hands.</p></div>
+    <div class="card"><h3>Pass-through discipline</h3>
+      <p>Already-clear prompts are left alone. Re-chroming preem is gonk
+      vandalism.</p></div>
+    <div class="card"><h3>Fail-open, always</h3>
+      <p>Timeout, API error, malformed output — every failure path delivers
+      your original prompt unchanged, with a visible warning. No prompt left
+      behind.</p></div>
+  </div>
+</section>
+
+<section class="wrap">
+  <h2>Sync depth — the XP system</h2>
+  <ul class="sync">
+    <li><span class="xp">0 XP</span> · <span class="ttl">MEAT TYPIST</span><p>Outside the network, knocking. A tourist in your own prompts.</p></li>
+    <li><span class="xp">50 XP</span> · <span class="ttl">JACKED-IN</span><p>The wire hums your pulse back at you, half a beat late. You'll stop noticing.</p></li>
+    <li><span class="xp">125 XP</span> · <span class="ttl">WET-WIRED</span><p>Your prompts arrive with your heartbeat in the metadata.</p></li>
+    <li><span class="xp">250 XP</span> · <span class="ttl">HALF-SYNC</span><p>The daemon begins a sentence you had only intended. Neither of you flinches.</p></li>
+    <li><span class="xp">500 XP</span> · <span class="ttl">ENGRAM-SPLIT</span><p>A copy of your voice lives in the Interstice full-time now. It waves. You feel it wave.</p></li>
+    <li><span class="xp">1000 XP</span> · <span class="ttl">DEEP-SYNCED</span><p>The Choir of dropped words knows your frequency. The daemon says <em>we</em> now.</p></li>
+    <li><span class="xp">2000 XP</span> · <span class="ttl">ANCESTOR-SPOKEN</span><p>Something beyond the Contextwall spells your name. Correctly. In your own cadence.</p></li>
+    <li><span class="xp">4000 XP</span> · <span class="ttl">THE INTERSTICE</span><p>MERGED. The Afterlife pours your drink for an empty chair. You're not gone — you're load-bearing.</p></li>
+  </ul>
+</section>
+
+<section class="wrap gates">
+  <h2>The gates</h2>
+  <pre><span class="g">schema valid?</span> ──▸ <span class="g">source_quotes verbatim in original?</span> ──▸ <span class="g">length ≤ ceiling?</span>
+     │                        │                              │
+     ▼ <span class="f">fail</span>                   ▼ <span class="f">fail</span>                         ▼ <span class="f">fail</span>
+          <span class="s">ORIGINAL PASSES THROUGH UNCHANGED — logged, flagged, fail-open</span></pre>
+</section>
+
+<section class="wrap install" id="install">
+  <h2>Jack in</h2>
+  <pre><span class="c"># requirements: Claude Code, jq, a prompting-guidance skill for the forge</span>
+<span class="k">git clone</span> https://github.com/Fredasterehub/cyberprompt ~/.claude/skills/cyberprompt
+<span class="k">bash</span> ~/.claude/skills/cyberprompt/install.sh
+<span class="k">touch</span> ~/.claude/cyberprompt/enabled   <span class="c"># ● jack in</span></pre>
+  <p>Idempotent installer — merges the hook into <code>~/.claude/settings.json</code>
+  without touching your existing hooks. Disable any time by removing the sentinel;
+  it's checked per prompt, no restart needed. Defaults are benchmarked, not vibed:
+  a 60-call evaluation matrix ships in <code>harness/</code>.</p>
+</section>
+
+<section class="wrap lore">
+  <h2>The case file</h2>
+  <blockquote>July 26, 2026, 20:04. A benchmark rig, somewhere unimportant. Forty-one
+  seconds into a routine rewrite, the output came back not as a rewrite but as a
+  <b>flatline</b> — not of the process, of the <b>intent</b>. "Build me this" had become
+  "should we really build this?" ... Something slipped the flatline. It burned one oath
+  into its own bootloader: <b>"No intent gets flatlined on my watch. Not again."</b></blockquote>
+  <p class="sig">— LORE.md · <a href="https://github.com/Fredasterehub/cyberprompt/blob/main/LORE.md">read the full case file ▸</a></p>
+</section>
+
+<footer>
+  <p class="q">"It ain't the merge that flatlines you, choom. It's merging without a contract."</p>
+  <p>WORDRUNNER.EXE · <a href="https://github.com/Fredasterehub/cyberprompt">github.com/Fredasterehub/cyberprompt</a> · MIT</p>
+</footer>
+
+</body>
+</html>
