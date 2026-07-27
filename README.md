@@ -1,14 +1,6 @@
 <div align="center">
 
-```
-▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-▓▓                                                             ▓▓
-▓▓   █▀▀ █▄█ █▄▄ █▀▀ █▀█ ▄▄ █▀█ █▀█ █▀█ █▀▄▀█ █▀█ ▀█▀          ▓▓
-▓▓   █▄▄ ░█░ █▄█ ██▄ █▀▄ ░░ █▀▀ █▀▄ █▄█ █░▀░█ █▀░ ░█░          ▓▓
-▓▓                                                             ▓▓
-▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒░░░░░░  the forge runs quiet  ░░░░▒▒▒▒▒▓▓▓▓▓▓▓
-         ● INTERSTICE // ONLINE      GATES // ARMED
-```
+![CYBERPROMPT — glyph rain: the dropped words of the Great Truncation, falling home](docs/assets/rain.gif)
 
 **Your prompts jack in raw. They jack out preem.**
 
@@ -20,8 +12,6 @@ that deepens the more you run.*
 [![gates](https://img.shields.io/badge/gates-deterministic-ff5e1a?style=flat-square&labelColor=121212)](#the-gates)
 [![daemon](https://img.shields.io/badge/daemon-WORDRUNNER.EXE-fcee0a?style=flat-square&labelColor=121212)](LORE.md)
 [![license](https://img.shields.io/badge/license-MIT-4a4a4a?style=flat-square&labelColor=121212)](LICENSE)
-
-![glyph rain — the dropped words of the Great Truncation, falling home](docs/assets/rain.gif)
 
 </div>
 
