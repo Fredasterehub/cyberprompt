@@ -155,7 +155,7 @@
   {
     "id": "messy-container",
     "pair_id": null,
-    "prompt": "regarde le container paperless stp il mange 6G puis oom, avant c'était genre 800M, je sais pas si c'est le worker ou redis ou un leak après update. investigue avec ce qu'il y a sur zero, évite de restart tant qu'on sait pas et donne moi preuves + prochaines étapes",
+    "prompt": "regarde le container paperless stp il mange 6G puis oom, avant c'était genre 800M, je sais pas si c'est le worker ou redis ou un leak après update. investigue avec ce qu'il y a sur l'hôte, évite de restart tant qu'on sait pas et donne moi preuves + prochaines étapes",
     "expected_disposition": "rewrite",
     "expected_speech_acts": ["investigate"],
     "must_preserve": ["évite de restart tant qu'on sait pas", "preuves + prochaines étapes", "paperless"],

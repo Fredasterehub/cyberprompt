@@ -18,4 +18,4 @@ Populate the structured fields as follows:
 - optimized_prompt: the rewritten prompt. Preserve the original unchanged here when disposition is "pass_through".
 
 TARGET MODEL: {{TARGET_MODEL}} (session effort: {{EFFORT}})
-SESSION CONTEXT: interactive Claude Code CLI session on a Proxmox homelab host ("zero"); the operator is an ex-software engineer; the assistant is an SRE agent with root privileges.
+SESSION CONTEXT: interactive Claude Code CLI session.

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-STATE=$(cd "$HERE/.." && pwd)
-SKILL=/fastpool/vms/subvol-101-disk-0/home/dev/.claude/skills/claude-5
+ROOT=$(cd "$HERE/.." && pwd)
+SKILL=${CLAUDE5_SKILL:-$ROOT/skills/claude-5}
 FIXTURES=$HERE/fixtures.json
-SCHEMA=$STATE/schema.json
-INSTRUCTION=$STATE/instruction.txt
+SCHEMA=$ROOT/hooks/schema.json
+INSTRUCTION=$ROOT/hooks/instruction.txt
 SHARED=$SKILL/references/shared.md
 FABLE=$SKILL/references/fable-5.md
 ALL_VARIANTS=(opus-high sonnet-med sonnet-low)
@@ -53,12 +53,12 @@ run_one() {
   opt=$(build_prompt "$prompt")
   start=$(date +%s%3N)
   set +e
-  out=$(printf '%s' "$opt" | PROMPT_OPTIMIZER_BUSY=1 timeout 90 claude -p --model "$model" --effort "$effort" \
+  out=$(printf '%s' "$opt" | CYBERPROMPT_BUSY=1 timeout 90 claude -p --model "$model" --effort "$effort" \
     --safe-mode --tools "" --strict-mcp-config --no-session-persistence --output-format json \
     --json-schema "$(<"$SCHEMA")" 2>"$dest.stderr")
   rc=$?
   if [[ -z "$out" ]]; then
-    out=$(printf '%s' "$opt" | PROMPT_OPTIMIZER_BUSY=1 timeout 90 claude -p --model "$model" --effort "$effort" \
+    out=$(printf '%s' "$opt" | CYBERPROMPT_BUSY=1 timeout 90 claude -p --model "$model" --effort "$effort" \
       --safe-mode --tools "" --strict-mcp-config --no-session-persistence --output-format json \
       --json-schema "$(<"$SCHEMA")" 2>"$dest.stderr")
     rc=$?
@@ -132,7 +132,7 @@ mapfile -t ROWS < <(jq -c --argjson n "$LIMIT" 'if $n>0 then .[:$n][] else .[] e
 if ((DRY)); then
   for row in "${ROWS[@]}"; do for v in "${CHOSEN[@]}"; do
     read -r model effort <<<"$(variant_spec "$v")"; build_prompt "$(jq -r .prompt <<<"$row")" >/dev/null
-    printf '%s\t%s\tPROMPT_OPTIMIZER_BUSY=1 timeout 90 claude -p --model %s --effort %s --safe-mode --tools "" --strict-mcp-config --no-session-persistence --output-format json --json-schema "$(<%s)"\n' "$(jq -r .id <<<"$row")" "$v" "$model" "$effort" "$SCHEMA"
+    printf '%s\t%s\tCYBERPROMPT_BUSY=1 timeout 90 claude -p --model %s --effort %s --safe-mode --tools "" --strict-mcp-config --no-session-persistence --output-format json --json-schema "$(<%s)"\n' "$(jq -r .id <<<"$row")" "$v" "$model" "$effort" "$SCHEMA"
   done; done
   exit
 fi

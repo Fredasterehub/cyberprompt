@@ -2,11 +2,14 @@
 # UserPromptSubmit hook — rewrites the operator's prompt via the claude-5 skill
 # references before the session model acts on it. Fail-open by design: any
 # error passes the original prompt through unchanged (with an operator warning).
-# Portable: all paths derive from $HOME; override the claude-5 skill location
-# with CLAUDE5_SKILL= in the config file.
+# Portable: state lives under $HOME; product assets resolve from the plugin
+# root when installed as a plugin (CLAUDE_PLUGIN_ROOT), else from the legacy
+# install locations. Override the claude-5 skill location with CLAUDE5_SKILL=
+# in the config file.
 set -uo pipefail
 
 STATE="$HOME/.claude/cyberprompt"
+PLUGIN="${CLAUDE_PLUGIN_ROOT:-}"
 
 # Recursion guard: our own headless `claude -p` inherits this variable, so the
 # hook firing inside that child call becomes a no-op instead of looping.
@@ -23,11 +26,13 @@ INPUT=$(cat)
 PROMPT=$(jq -r '.prompt // empty' <<<"$INPUT")
 [ -z "$PROMPT" ] && exit 0
 
-MODEL=claude-opus-5
-EFFORT=high
+MODEL=claude-sonnet-5
+EFFORT=medium
 MIN_CHARS=80
 [ -f "$STATE/config" ] && . "$STATE/config"
-SKILL="${CLAUDE5_SKILL:-$HOME/.claude/skills/claude-5}"
+# claude-5 skill: explicit override > plugin-bundled copy > legacy seeded copy.
+SKILL="${CLAUDE5_SKILL:-${PLUGIN:+$PLUGIN/skills/claude-5}}"
+SKILL="${SKILL:-$HOME/.claude/skills/claude-5}"
 
 # Skip slash commands, ! (shell) and # (memory) shortcuts, and short prompts
 # that would cost more latency than the rewrite is worth.
@@ -128,7 +133,7 @@ gate_output() {
 }
 
 # WORDRUNNER.EXE — the daemon levels up as the audit log grows (1 entry = 1 XP,
-# scars included). Lore: LORE.md (repo root)
+# scars included). Lore: skills/cyberprompt/LORE.md
 xp_header() {
   local xp lvl=0 t next
   xp=$(wc -l < "$STATE/log.jsonl" 2>/dev/null) || xp=0
@@ -184,8 +189,17 @@ xp_header() {
 }
 
 [ -f "$SKILL/SKILL.md" ] || fail_open "claude-5 skill not found at $SKILL"
-[ -f "$STATE/instruction.txt" ] || fail_open "instruction template missing in $STATE"
-[ -f "$STATE/schema.json" ] || fail_open "structured-output schema missing in $STATE"
+[ -f "$SKILL/references/shared.md" ] || fail_open "claude-5 skill incomplete: references/shared.md missing in $SKILL"
+
+# Instruction template: a user-customized copy in $STATE wins; otherwise the
+# plugin-bundled template. Schema is product-owned: prefer the plugin copy so
+# updates take effect without touching $STATE; legacy installs seed $STATE.
+INSTRUCTION="$STATE/instruction.txt"
+[ -f "$INSTRUCTION" ] || INSTRUCTION="${PLUGIN:+$PLUGIN/hooks/instruction.txt}"
+[ -n "$INSTRUCTION" ] && [ -f "$INSTRUCTION" ] || fail_open "instruction template missing (checked $STATE and plugin)"
+SCHEMA="${PLUGIN:+$PLUGIN/hooks/schema.json}"
+[ -n "$SCHEMA" ] && [ -f "$SCHEMA" ] || SCHEMA="$STATE/schema.json"
+[ -f "$SCHEMA" ] || fail_open "structured-output schema missing (checked plugin and $STATE)"
 
 # Target model = the model of this session (last assistant message in the
 # transcript; falls back to the configured default model).
@@ -207,7 +221,7 @@ esac
 SESSION_EFFORT=$(jq -r '.effort.level // "unknown"' <<<"$INPUT")
 
 OPT_PROMPT=$(
-  sed -e "s|{{TARGET_MODEL}}|$TARGET|" -e "s|{{EFFORT}}|$SESSION_EFFORT|" "$STATE/instruction.txt"
+  sed -e "s|{{TARGET_MODEL}}|$TARGET|" -e "s|{{EFFORT}}|$SESSION_EFFORT|" "$INSTRUCTION"
   echo
   echo "=== REFERENCE: Claude 5 shared prompting guidance ==="
   cat "$SKILL/references/shared.md"
@@ -226,7 +240,7 @@ START_MS=$(date +%s%3N)
 RESPONSE=$(printf '%s' "$OPT_PROMPT" \
   | CYBERPROMPT_BUSY=1 timeout 60 claude -p --model "$MODEL" --effort "$EFFORT" \
       --safe-mode --tools "" --strict-mcp-config --no-session-persistence \
-      --output-format json --json-schema "$(<"$STATE/schema.json")" 2>>"$STATE/error.log")
+      --output-format json --json-schema "$(<"$SCHEMA")" 2>>"$STATE/error.log")
 rc=$?
 DURATION_MS=$(( $(date +%s%3N) - START_MS ))
 if [ "$rc" -ne 0 ]; then
@@ -251,7 +265,7 @@ fi
 log_event
 
 CONTEXT=$(jq -r '
-  "PROMPT OPTIMIZER ADVISORY (enabled deliberately by the operator): The operator'\''s ORIGINAL prompt is authoritative for intent, scope, permissions, and constraints. The material below is an execution aid only. On any conflict, the ORIGINAL prompt wins. Do not comment on the optimization process itself.\n\n" +
+  "CYBERPROMPT ADVISORY (prompt optimization enabled deliberately by the operator): The operator'\''s ORIGINAL prompt is authoritative for intent, scope, permissions, and constraints. The material below is an execution aid only. On any conflict, the ORIGINAL prompt wins. Do not comment on the optimization process itself.\n\n" +
   "=== EXPLICIT TASK ===\n" +
   (if (.speech_acts | length) == 0 then "- None identified."
    else (.speech_acts | map("- " + .) | join("\n")) end) +

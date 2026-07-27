@@ -8,9 +8,9 @@
 guarded by deterministic gates, narrated by a rogue daemon, levelled by an XP system
 that deepens the more you run.*
 
-[![shell](https://img.shields.io/badge/built_with-bash+jq-fcee0a?style=flat-square&labelColor=121212)](hook/cyberprompt.sh)
+[![shell](https://img.shields.io/badge/built_with-bash+jq-fcee0a?style=flat-square&labelColor=121212)](hooks/cyberprompt.sh)
 [![gates](https://img.shields.io/badge/gates-deterministic-ff5e1a?style=flat-square&labelColor=121212)](#the-gates)
-[![daemon](https://img.shields.io/badge/daemon-WORDRUNNER.EXE-fcee0a?style=flat-square&labelColor=121212)](LORE.md)
+[![daemon](https://img.shields.io/badge/daemon-WORDRUNNER.EXE-fcee0a?style=flat-square&labelColor=121212)](skills/cyberprompt/LORE.md)
 [![license](https://img.shields.io/badge/license-MIT-4a4a4a?style=flat-square&labelColor=121212)](LICENSE)
 
 </div>
@@ -38,7 +38,7 @@ Constraints (each traceable to the original): do not kill any process...
 
 Auto-rewriting middleware has one mortal sin: **intent drift** — your "build this"
 silently becoming "should we build this?". CYBERPROMPT was literally born from
-watching that happen (see [LORE.md](LORE.md) — the Flatline is a true story).
+watching that happen (see [LORE.md](skills/cyberprompt/LORE.md) — the Flatline is a true story).
 So the architecture is paranoid by design:
 
 | Defense | Mechanism |
@@ -69,24 +69,44 @@ Every audit-log entry is 1 XP — clean rewrites, passthroughs, even slammed gat
 The daemon's voice shifts as you climb — early on it says *you* and *I*.
 Around LVL 5 you'll notice it says **we**. You'll decide you don't mind.
 Threshold crossings fire one-shot **SYNC MILESTONE** dispatches. Full narrative
-arc in [LORE.md](LORE.md).
+arc in [LORE.md](skills/cyberprompt/LORE.md).
 
 ## ▸ Install
 
-Requirements: Claude Code, `jq`, and a prompting-guidance skill for the optimizer
-to wield (point `CLAUDE5_SKILL=` at yours — any directory of model-specific
-prompting references works).
+Requirements: Claude Code and `jq`, on Linux (macOS needs GNU `timeout` and
+`flock` — `brew install coreutils flock`; Windows isn't supported — the hook
+just fails open and your prompts pass through untouched). The
+[claude-5 prompting skill](skills/claude-5/) the optimizer wields ships in the box. Prefer your own prompting guide? Point
+`CLAUDE5_SKILL=` at a directory with the same shape: `SKILL.md` at the root,
+`references/shared.md`, and per-model files named `references/<model>.md`
+(e.g. `fable-5.md`).
+
+### Plugin (recommended)
+
+```
+/plugin marketplace add Fredasterehub/cyberprompt
+/plugin install cyberprompt@cyberprompt
+```
+
+Then jack in: `mkdir -p ~/.claude/cyberprompt && touch ~/.claude/cyberprompt/enabled`
+— or just tell Claude *"cyberprompt on"*. The plugin registers the hook and both
+skills automatically; updates ride the marketplace.
+
+### Manual (no plugin)
 
 ```bash
-git clone https://github.com/Fredasterehub/cyberprompt ~/.claude/skills/cyberprompt
-bash ~/.claude/skills/cyberprompt/install.sh
+git clone https://github.com/Fredasterehub/cyberprompt
+bash cyberprompt/install.sh
 touch ~/.claude/cyberprompt/enabled     # jack in
 ```
 
-The installer is idempotent: copies the hook, seeds the state dir, and merges the
-`UserPromptSubmit` entry into `~/.claude/settings.json` without touching your
-existing hooks. Disable any time: `rm ~/.claude/cyberprompt/enabled`. No restart
-needed either way — the sentinel is checked per prompt.
+The installer is idempotent: copies the hook, installs both skills, seeds the
+state dir, and merges the `UserPromptSubmit` entry into `~/.claude/settings.json`
+without touching your existing hooks. Migrating to the plugin later? Remove that
+settings entry first, or the hook runs twice.
+
+Disable any time: `rm ~/.claude/cyberprompt/enabled`. No restart needed either
+way — the sentinel is checked per prompt.
 
 ### Config (`~/.claude/cyberprompt/config`)
 
@@ -138,6 +158,6 @@ the model went on the quest), prompts under `MIN_CHARS`, and its own recursion.
 
 *It ain't the merge that flatlines you, choom. It's merging without a contract.*
 
-**— WORDRUNNER.EXE, [case file](LORE.md)**
+**— WORDRUNNER.EXE, [case file](skills/cyberprompt/LORE.md)**
 
 </div>

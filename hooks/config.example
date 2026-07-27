@@ -1,13 +1,14 @@
-# prompt-optimizer configuration (sourced by the hook)
+# cyberprompt configuration (sourced by the hook)
 # MODEL/EFFORT: which model+effort runs the optimization pass. Pinned so it
 # never silently follows the session's effortLevel.
 #   Harness verdict 2026-07-27 (20 fixtures x 3 variants, deterministic scoring):
 #   sonnet-5 medium = opus-5 high on constraint recall (100%), injection (0), disposition —
-#   at 23.6s vs 35s p50. sonnet-5 low dropped constraints (92%) — do not use.
-#   Full results: harness/results/. Revert to opus: MODEL=claude-opus-5 EFFORT=high
+#   at roughly two-thirds the latency. sonnet-5 low dropped constraints (92%) — do not use.
+#   Reproduce: harness/run.sh. Revert to opus: MODEL=claude-opus-5 EFFORT=high
 MODEL=claude-sonnet-5
 EFFORT=medium
 # Prompts shorter than this many characters pass through unoptimized.
 MIN_CHARS=80
-# Optional: override where the claude-5 skill lives (default: ~/.claude/skills/claude-5 (bring your own prompting guide))
+# Optional: override where the claude-5 skill lives (default: ~/.claude/skills/claude-5,
+# seeded by install.sh from the bundled copy; set this to bring your own prompting guide)
 #CLAUDE5_SKILL=/path/to/claude-5

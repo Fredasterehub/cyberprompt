@@ -1,0 +1,17 @@
+{
+  "description": "CYBERPROMPT — advisory prompt rewriting on every operator prompt. Fail-open: any error passes the original prompt through unchanged. Enabled per-user via the ~/.claude/cyberprompt/enabled sentinel (use the cyberprompt skill: 'cyberprompt on').",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/cyberprompt.sh"],
+            "timeout": 90
+          }
+        ]
+      }
+    ]
+  }
+}
