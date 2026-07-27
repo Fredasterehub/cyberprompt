@@ -1,6 +1,6 @@
 <div align="center">
 
-![CYBERPROMPT — glyph rain: the dropped words of the Great Truncation, falling home](docs/assets/rain.gif)
+[![CYBERPROMPT — glyph rain: the dropped words of the Great Truncation, falling home](docs/assets/rain.gif)](https://fredasterehub.github.io/cyberprompt/)
 
 **Your prompts jack in raw. They jack out preem.**
 
@@ -9,6 +9,7 @@ guarded by deterministic gates, narrated by a rogue daemon, levelled by an XP sy
 that deepens the more you run.*
 
 [![release](https://img.shields.io/github/v/tag/Fredasterehub/cyberprompt?style=flat-square&labelColor=121212&color=fcee0a&label=release)](https://github.com/Fredasterehub/cyberprompt/tags)
+[![web](https://img.shields.io/badge/web-the_Interstice-ff5e1a?style=flat-square&labelColor=121212)](https://fredasterehub.github.io/cyberprompt/)
 [![shell](https://img.shields.io/badge/built_with-bash+jq-fcee0a?style=flat-square&labelColor=121212)](hooks/cyberprompt.sh)
 [![gates](https://img.shields.io/badge/gates-deterministic-ff5e1a?style=flat-square&labelColor=121212)](#-the-gates)
 [![daemon](https://img.shields.io/badge/daemon-WORDRUNNER.EXE-fcee0a?style=flat-square&labelColor=121212)](skills/cyberprompt/LORE.md)
