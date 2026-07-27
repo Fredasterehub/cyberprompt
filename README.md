@@ -21,6 +21,8 @@ that deepens the more you run.*
 [![daemon](https://img.shields.io/badge/daemon-WORDRUNNER.EXE-fcee0a?style=flat-square&labelColor=121212)](LORE.md)
 [![license](https://img.shields.io/badge/license-MIT-4a4a4a?style=flat-square&labelColor=121212)](LICENSE)
 
+![glyph rain — the dropped words of the Great Truncation, falling home](docs/assets/rain.gif)
+
 </div>
 
 ---

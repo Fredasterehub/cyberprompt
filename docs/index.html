@@ -54,8 +54,14 @@
   .statusbar .dot{ color:var(--primary) }
   .statusbar .r{ margin-left:auto; color:var(--accent) }
 
-  /* ── hero ──────────────────────────────────────── */
+  /* ── hero + glyph rain ─────────────────────────── */
   .hero{ padding: 5.5rem 0 4rem; position:relative }
+  .rain-clip{
+    position:absolute; inset:0; overflow:hidden; pointer-events:none;
+    mask-image: linear-gradient(180deg, transparent, #000 12%, #000 82%, transparent);
+  }
+  #rain{ width:100%; height:100%; opacity:.16 }
+  .hero > :not(.rain-clip){ position:relative; z-index:1 }
   .hero .pre{ color:var(--accent); font-size:.8rem; letter-spacing:.35em; text-transform:uppercase; margin-bottom:1.2rem }
   h1{
     font-size: clamp(2.6rem, 8vw, 5.2rem);
@@ -200,6 +206,7 @@
 </div>
 
 <header class="hero wrap">
+  <div class="rain-clip"><canvas id="rain"></canvas></div>
   <div class="pre">// claude code · userpromptsubmit hook</div>
   <h1>CYBER<span>PROMPT</span><span class="cursor"></span></h1>
   <p class="tag">Your prompts jack in raw. They jack out <b>preem</b>.</p>
@@ -301,5 +308,48 @@
   <p>WORDRUNNER.EXE · <a href="https://github.com/Fredasterehub/cyberprompt">github.com/Fredasterehub/cyberprompt</a> · MIT</p>
 </footer>
 
+<script>
+(() => {
+  // Glyph rain — the dropped words of the Great Truncation, falling home.
+  const cv = document.getElementById('rain');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const GLYPHS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789契約言葉魂鍵門';
+  const FS = 16;
+  let cols, drops;
+  function size(){
+    const r = cv.parentElement.getBoundingClientRect();
+    cv.width = r.width; cv.height = r.height;
+    cols = Math.ceil(cv.width / FS);
+    drops = Array.from({length: cols}, () => Math.floor(Math.random() * -40));
+    ctx.fillStyle = '#141310'; ctx.fillRect(0, 0, cv.width, cv.height);
+  }
+  size();
+  addEventListener('resize', size);
+  function frame(){
+    ctx.fillStyle = 'rgba(20,19,16,0.10)';
+    ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.font = FS + 'px monospace';
+    for (let i = 0; i < cols; i++){
+      const ch = GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+      ctx.fillStyle = Math.random() < 0.06 ? '#ff5e1a' : '#fcee0a';
+      ctx.fillText(ch, i * FS, drops[i] * FS);
+      if (drops[i] * FS > cv.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    }
+  }
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches){
+    for (let k = 0; k < 60; k++) frame();   // one settled still, no motion
+  } else {
+    let last = 0;
+    (function loop(t){
+      requestAnimationFrame(loop);
+      if (t - last < 66) return;            // ~15 fps — rain, not strobe
+      last = t;
+      if (!document.hidden) frame();
+    })(0);
+  }
+})();
+</script>
 </body>
 </html>
