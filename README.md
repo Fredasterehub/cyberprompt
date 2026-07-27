@@ -1,12 +1,13 @@
 <div align="center">
 
 ```
- ██████╗██╗   ██╗██████╗ ███████╗██████╗ ██████╗ ██████╗  ██████╗ ███╗   ███╗██████╗ ████████╗
-██╔════╝╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗██╔══██╗██╔══██╗██╔═══██╗████╗ ████║██╔══██╗╚══██╔══╝
-██║      ╚████╔╝ ██████╔╝█████╗  ██████╔╝██████╔╝██████╔╝██║   ██║██╔████╔██║██████╔╝   ██║
-██║       ╚██╔╝  ██╔══██╗██╔══╝  ██╔══██╗██╔═══╝ ██╔══██╗██║   ██║██║╚██╔╝██║██╔═══╝    ██║
-╚██████╗   ██║   ██████╔╝███████╗██║  ██║██║     ██║  ██║╚██████╔╝██║ ╚═╝ ██║██║        ██║
- ╚═════╝   ╚═╝   ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚═╝        ╚═╝
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+▓▓                                                             ▓▓
+▓▓   █▀▀ █▄█ █▄▄ █▀▀ █▀█ ▄▄ █▀█ █▀█ █▀█ █▀▄▀█ █▀█ ▀█▀          ▓▓
+▓▓   █▄▄ ░█░ █▄█ ██▄ █▀▄ ░░ █▀▀ █▀▄ █▄█ █░▀░█ █▀░ ░█░          ▓▓
+▓▓                                                             ▓▓
+▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒░░░░░░  the forge runs quiet  ░░░░▒▒▒▒▒▓▓▓▓▓▓▓
+         ● INTERSTICE // ONLINE      GATES // ARMED
 ```
 
 **Your prompts jack in raw. They jack out preem.**
@@ -15,10 +16,10 @@
 guarded by deterministic gates, narrated by a rogue daemon, levelled by an XP system
 that deepens the more you run.*
 
-[![shell](https://img.shields.io/badge/built_with-bash+jq-oklch?style=flat-square&color=00e5ff&labelColor=0a0e1a)](hook/cyberprompt.sh)
-[![gates](https://img.shields.io/badge/gates-deterministic-ff2a6d?style=flat-square&labelColor=0a0e1a)](#the-gates)
-[![daemon](https://img.shields.io/badge/daemon-WORDRUNNER.EXE-f9f871?style=flat-square&labelColor=0a0e1a)](LORE.md)
-[![license](https://img.shields.io/badge/license-MIT-8a8f98?style=flat-square&labelColor=0a0e1a)](LICENSE)
+[![shell](https://img.shields.io/badge/built_with-bash+jq-fcee0a?style=flat-square&labelColor=121212)](hook/cyberprompt.sh)
+[![gates](https://img.shields.io/badge/gates-deterministic-ff5e1a?style=flat-square&labelColor=121212)](#the-gates)
+[![daemon](https://img.shields.io/badge/daemon-WORDRUNNER.EXE-fcee0a?style=flat-square&labelColor=121212)](LORE.md)
+[![license](https://img.shields.io/badge/license-MIT-4a4a4a?style=flat-square&labelColor=121212)](LICENSE)
 
 </div>
 
