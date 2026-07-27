@@ -4,12 +4,13 @@
 
 **Your prompts jack in raw. They jack out preem.**
 
-*A Claude Code hook that rewrites your prompts before the model reads them —
+*A Claude Code plugin that rewrites your prompts before the model acts on them —
 guarded by deterministic gates, narrated by a rogue daemon, levelled by an XP system
 that deepens the more you run.*
 
+[![release](https://img.shields.io/github/v/tag/Fredasterehub/cyberprompt?style=flat-square&labelColor=121212&color=fcee0a&label=release)](https://github.com/Fredasterehub/cyberprompt/tags)
 [![shell](https://img.shields.io/badge/built_with-bash+jq-fcee0a?style=flat-square&labelColor=121212)](hooks/cyberprompt.sh)
-[![gates](https://img.shields.io/badge/gates-deterministic-ff5e1a?style=flat-square&labelColor=121212)](#the-gates)
+[![gates](https://img.shields.io/badge/gates-deterministic-ff5e1a?style=flat-square&labelColor=121212)](#-the-gates)
 [![daemon](https://img.shields.io/badge/daemon-WORDRUNNER.EXE-fcee0a?style=flat-square&labelColor=121212)](skills/cyberprompt/LORE.md)
 [![license](https://img.shields.io/badge/license-MIT-4a4a4a?style=flat-square&labelColor=121212)](LICENSE)
 
@@ -19,15 +20,16 @@ that deepens the more you run.*
 
 ## ▸ What is this, choom?
 
-**CYBERPROMPT** is a `UserPromptSubmit` hook for [Claude Code](https://claude.com/claude-code).
-Toggle it on, and every prompt you type gets intercepted in the **Interstice** — the
+**CYBERPROMPT** is a [Claude Code](https://claude.com/claude-code) plugin: a
+`UserPromptSubmit` hook flanked by two bundled skills (management + the claude-5
+prompting references it wields). Toggle it on, and every prompt you type gets intercepted in the **Interstice** — the
 millisecond between Enter and inference — rewritten for clarity by a headless model call,
 validated by mechanical gates, and injected as an *advisory* execution brief. You see the
 rewrite in a pale terminal whisper. The model gets a contract. Your original words stay
 **gospel**.
 
 ```
-⟨ WORDRUNNER.EXE ⟩ LVL 3 · Half-Sync ▸ 287 XP ▸ next @ 500 XP
+⟨ WORDRUNNER.EXE ⟩ LVL 3 · Half-Sync ▸ 288 XP ▸ next @ 500 XP
 Sync at fifty percent. Sometimes I start the sentence before you do.
 ---
 Objective: identify which container is leaking memory, then report — no fixes.
@@ -45,7 +47,7 @@ So the architecture is paranoid by design:
 |---|---|
 | **Original is authoritative** | The rewrite is injected as an *advisory* contract: on any conflict, your original prompt wins. Stated in-band, enforced by framing. |
 | **Proof-carrying rewrites** | The optimizer must return structured JSON: explicit requirements each backed by a **verbatim quote** of your prompt, inferences quarantined as non-binding. |
-| **Deterministic gates** | Pure bash+jq validation — schema check, source-quote substring check, length ceiling, action-mode preservation. Any failure → your original passes untouched. |
+| **Deterministic gates** | Pure bash+jq validation — schema check, source-quote substring check, non-empty rewrite, length ceiling. Any failure → your original passes untouched. |
 | **`pass_through` discipline** | Already-clear prompts are left alone. Re-chroming preem is gonk vandalism. |
 | **Injection containment** | The optimizer call is non-agentic: `--safe-mode --tools "" --strict-mcp-config`. Pasted logs in your prompt can't hijack a daemon that has no hands. |
 | **Fail-open, always** | Timeout, API error, malformed output, missing files — every failure path delivers your original prompt unchanged, with a visible warning. |
@@ -74,9 +76,10 @@ arc in [LORE.md](skills/cyberprompt/LORE.md).
 ## ▸ Install
 
 Requirements: Claude Code and `jq`, on Linux (macOS needs GNU `timeout` and
-`flock` — `brew install coreutils flock`; Windows isn't supported — the hook
-just fails open and your prompts pass through untouched). The
-[claude-5 prompting skill](skills/claude-5/) the optimizer wields ships in the box. Prefer your own prompting guide? Point
+`flock` — `brew install coreutils flock`, then put brew's `gnubin` on your
+`PATH`; Windows isn't supported — the hook just fails open and your prompts
+pass through untouched). The optimizer's own
+[claude-5 prompting skill](skills/claude-5/) ships in the box. Prefer your own prompting guide? Point
 `CLAUDE5_SKILL=` at a directory with the same shape: `SKILL.md` at the root,
 `references/shared.md`, and per-model files named `references/<model>.md`
 (e.g. `fable-5.md`).
@@ -90,7 +93,9 @@ just fails open and your prompts pass through untouched). The
 
 Then jack in: `mkdir -p ~/.claude/cyberprompt && touch ~/.claude/cyberprompt/enabled`
 — or just tell Claude *"cyberprompt on"*. The plugin registers the hook and both
-skills automatically; updates ride the marketplace.
+skills automatically; updates ride the marketplace. Restart Claude Code once
+after installing (hooks load at session start) — toggling the sentinel never
+needs one.
 
 ### Manual (no plugin)
 
@@ -111,10 +116,14 @@ way — the sentinel is checked per prompt.
 ### Config (`~/.claude/cyberprompt/config`)
 
 ```bash
-MODEL=claude-sonnet-5   # which model runs the forge
-EFFORT=medium           # pinned — never silently follows your session effort
-MIN_CHARS=80            # shorter prompts pass through untouched
+MODEL=claude-sonnet-5     # which model runs the forge
+EFFORT=medium             # pinned — never silently follows your session effort
+MIN_CHARS=80              # shorter prompts pass through untouched
+#CLAUDE5_SKILL=/path/to/yours   # bring your own prompting guide (see Install)
 ```
+
+Plugin installs don't seed this file — the defaults above apply until you
+create it (the hook reads it whenever it exists). The manual installer seeds it.
 
 Defaults are **benchmarked, not vibed**: a 60-call evaluation matrix
 (20 fixtures × 3 variants, deterministic scoring — see [`harness/`](harness/))

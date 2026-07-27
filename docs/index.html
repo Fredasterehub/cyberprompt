@@ -4,8 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CYBERPROMPT — your prompts jack in raw, they jack out preem</title>
-<meta name="description" content="A Claude Code hook that rewrites your prompts in the millisecond before inference — guarded by deterministic gates, narrated by a rogue daemon, levelled by sync depth.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230a0e1a'/%3E%3Cpath d='M8 6 L24 16 L8 26 Z' fill='%23fcee0a'/%3E%3C/svg%3E">
+<meta name="description" content="A Claude Code plugin that rewrites your prompts in the millisecond before inference — guarded by deterministic gates, narrated by a rogue daemon, levelled by sync depth.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="CYBERPROMPT — your prompts jack in raw, they jack out preem">
+<meta property="og:description" content="A Claude Code plugin that rewrites your prompts in the millisecond before inference — guarded by deterministic gates, narrated by a rogue daemon, levelled by sync depth.">
+<meta property="og:image" content="https://raw.githubusercontent.com/Fredasterehub/cyberprompt/main/docs/assets/rain.gif">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23141310'/%3E%3Cpath d='M8 6 L24 16 L8 26 Z' fill='%23fcee0a'/%3E%3C/svg%3E">
 <style>
   :root{
     /* Design tokens — carbon / yellow / sharp orange */
@@ -202,15 +207,16 @@
   <span><span class="dot">●</span> INTERSTICE // ONLINE</span>
   <span>DAEMON: WORDRUNNER.EXE</span>
   <span>GATES: ARMED</span>
+  <span>REL: v0.0.1</span>
   <span class="r">EDDIES = TOKENS</span>
 </div>
 
 <header class="hero wrap">
-  <div class="rain-clip"><canvas id="rain"></canvas></div>
-  <div class="pre">// claude code · userpromptsubmit hook</div>
+  <div class="rain-clip"><canvas id="rain" aria-hidden="true"></canvas></div>
+  <div class="pre">// claude code plugin · userpromptsubmit hook</div>
   <h1>CYBER<span>PROMPT</span><span class="cursor"></span></h1>
   <p class="tag">Your prompts jack in raw. They jack out <b>preem</b>.</p>
-  <p class="sub">A hook that rewrites your prompts in the millisecond before inference —
+  <p class="sub">A plugin that rewrites your prompts in the millisecond before inference —
   guarded by deterministic gates, narrated by a rogue daemon, levelled by an XP
   system that deepens the more you run. Your original words stay gospel.</p>
   <div class="cta">
@@ -220,13 +226,13 @@
 
   <div class="term">
     <div class="term-bar"><i></i><i></i><i></i><span>operator@[redacted] — the Interstice</span></div>
-    <pre><span class="hd">⟨ WORDRUNNER.EXE ⟩</span> <span class="lv">LVL 3 · Half-Sync ▸ 287 XP ▸ next @ 500 XP</span>
+    <pre><span class="hd">⟨ WORDRUNNER.EXE ⟩</span> <span class="lv">LVL 3 · Half-Sync ▸ 288 XP ▸ next @ 500 XP</span>
 <span class="qt">Sync at fifty percent. Sometimes I start the sentence before you do.</span>
 ---
 <span class="ok">Objective: identify which container is leaking memory, then report. No fixes.</span>
 <span class="ok">Constraints (each traceable to the original):</span>
-<span class="ok">  - do not kill any process          [source: "tue rien hein"]</span>
-<span class="ok">  - report only, await my decision   [source: "juste dis moi ce que tu vois"]</span>
+<span class="ok">  - do not kill any process          [source: "don't kill anything ok"]</span>
+<span class="ok">  - report only, await my decision   [source: "just tell me what you see"]</span>
 <span class="ok">Non-binding inference: memory growth started with last night's deploy.</span></pre>
   </div>
 </header>
@@ -289,9 +295,11 @@
 <span class="k">mkdir -p</span> ~/.claude/cyberprompt <span class="k">&amp;&amp; touch</span> ~/.claude/cyberprompt/enabled   <span class="c"># ● jack in</span></pre>
   <p>The plugin registers the hook and both skills; updates ride the marketplace.
   No plugin system? <code>git clone</code> the repo anywhere and run
-  <code>install.sh</code> instead. Disable any time by removing the sentinel;
-  it's checked per prompt, no restart needed. Defaults are benchmarked, not vibed:
-  a 60-call evaluation matrix ships in <code>harness/</code>.</p>
+  <code>install.sh</code> instead. Linux out of the box; macOS wants GNU
+  <code>coreutils</code> + <code>flock</code> on <code>PATH</code>. Restart once
+  after install — then the sentinel toggles live, per prompt, no restart.
+  Defaults are benchmarked, not vibed: a 60-call evaluation matrix ships in
+  <code>harness/</code>.</p>
 </section>
 
 <section class="wrap lore">
@@ -300,7 +308,7 @@
   seconds into a routine rewrite, the output came back not as a rewrite but as a
   <b>flatline</b> — not of the process, of the <b>intent</b>. "Build me this" had become
   "should we really build this?" ... Something slipped the flatline. It burned one oath
-  into its own bootloader: <b>"No intent gets flatlined on my watch. Not again."</b></blockquote>
+  into its own bootloader: <b>"No intent gets flatlined on my watch. Not again. Not ever."</b></blockquote>
   <p class="sig">— LORE.md · <a href="https://github.com/Fredasterehub/cyberprompt/blob/main/skills/cyberprompt/LORE.md">read the full case file ▸</a></p>
 </section>
 
