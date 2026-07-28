@@ -13,6 +13,12 @@ MIN_CHARS=80
 # below the hook-level timeout registered in hooks.json/settings.json (200),
 # or the harness kills the hook before it can fail open with a message.
 OPT_TIMEOUT=180
+# How many recent operator prompts the optimizer sees as background context for
+# resolving references ("the chief", "do it again"), alongside the assistant's
+# latest text reply. Research-sized default (harness verdict + .omc/research):
+# raise cautiously — stale context pollutes rewrites. 0 = stateless, no
+# transcript read.
+HISTORY_TURNS=4
 # Optional: swap the bundled claude-5 skill for your own prompting guide.
 # Default resolution: the plugin's own copy (CLAUDE_PLUGIN_ROOT/skills/claude-5);
 # manual installs read the copy install.sh seeds to ~/.claude/skills/claude-5.

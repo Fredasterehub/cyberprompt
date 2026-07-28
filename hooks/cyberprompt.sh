@@ -30,6 +30,7 @@ MODEL=claude-sonnet-5
 EFFORT=medium
 MIN_CHARS=80
 OPT_TIMEOUT=180
+HISTORY_TURNS=4
 [ -f "$STATE/config" ] && . "$STATE/config"
 # claude-5 skill: explicit override > plugin-bundled copy > legacy seeded copy.
 SKILL="${CLAUDE5_SKILL:-${PLUGIN:+$PLUGIN/skills/claude-5}}"
@@ -62,11 +63,12 @@ log_event() {
          --arg original "$PROMPT" --arg optimized "${OPTIMIZED:-}" \
          --arg disposition "${DISPOSITION:-}" \
          --argjson duration "${DURATION_MS:-0}" \
+         --argjson ctx "${#HISTORY}" \
          --arg gate "${GATE_FAILURE:-}" \
     '{ts:$ts, session:$sid, optimizer_model:$model, target_model:$target,
       original:$original, optimized:$optimized,
       disposition:(if $disposition == "" then null else $disposition end),
-      duration_ms:$duration,
+      duration_ms:$duration, context_chars:$ctx,
       gate_failure:(if $gate == "" then null else $gate end)}') || return 0
   (
     umask 077
@@ -221,8 +223,63 @@ SESSION_EFFORT=$(jq -r '.effort.level // "unknown"' <<<"$INPUT")
 
 # Length ceiling shared by the instruction's stated budget and the output gate:
 # linear headroom so long originals earn long rewrites, hard cap against bloat.
+# Keyed to the raw prompt ONLY — background context must never widen it, or the
+# rewriter can snowball prior turns' material into the rewrite.
 CEILING=$((2 * ${#PROMPT} + 1500))
 [ "$CEILING" -gt 9000 ] && CEILING=9000
+
+# Background context: a bounded slice of this session's transcript — the last
+# HISTORY_TURNS operator prompts plus the assistant's most recent text reply.
+# Sizing and role rules follow the research consensus (.omc/research + harness
+# fixtures): operator turns are the trust anchor, ONE capped assistant extract
+# resolves referents it introduced, tool output and thinking never enter (the
+# noisiest content and the primary injection carrier). Items are JSON-escaped
+# so pasted text cannot break out of the block. Extraction failure degrades to
+# the stateless rewrite, never to a blocked prompt.
+# A user-customized template from before the background/system-prompt contract
+# tells the model to ignore material outside the user message and carries no
+# background-handling rules — feeding it the new payload would strip the
+# references and hand it context without discipline. Preserve the exact legacy
+# payload for those templates: references inline, no history, no system prompt.
+TEMPLATE_CURRENT=""
+grep -q 'BACKGROUND CONTEXT' "$INSTRUCTION" 2>/dev/null && TEMPLATE_CURRENT=1
+
+HISTORY=""
+if [ -n "$TEMPLATE_CURRENT" ] && [ "${HISTORY_TURNS:-0}" -gt 0 ] 2>/dev/null && [ -n "$TP" ] && [ -f "$TP" ]; then
+  HISTORY=$(tail -n 500 "$TP" 2>>"$STATE/error.log" | jq -c -s \
+    --arg cur "$PROMPT" --argjson n "$HISTORY_TURNS" '
+    def elide($h; $t; $max): if length > $max then .[0:$h] + " […] " + .[-$t:] else . end;
+    ([ .[]
+       | select(.type == "user" and .isMeta != true and .isSidechain != true
+                and .isCompactSummary != true)
+       | .message.content
+       | select(type == "string")
+       | select(. != $cur)
+       # Machine turns that reach transcripts as type=="user": task
+       # notifications, teammate relays ("Another Claude session sent…"),
+       # system events, interrupts, slash-command boilerplate
+       # (<command-message> precedes <command-name> on those lines),
+       # local-command output, caveat wrappers, compaction continuations,
+       # and /-!-# shortcut turns.
+       | select(test("^(<task-notification|\\[SYSTEM NOTIFICATION|<teammate-message|Another Claude session|<system-|\\[Request interrupted|<command-|<local-command|Caveat:|This session is being continued|[/!#])") | not)
+     ]
+     # adjacent duplicates come from UI re-queues, not the operator
+     | reduce .[] as $p ([]; if (.[-1] // "") == $p then . else . + [$p] end)
+     | .[-$n:]
+     | map({role: "operator", text: elide(300; 180; 500)})
+    ) as $ops
+    | ([ .[]
+         | select(.type == "assistant" and .isSidechain != true)
+         | [.message.content[]? | select(type == "object" and .type == "text") | .text]
+         | join("\n")
+         | select(length > 0)
+       ] | if length > 0
+           then [{role: "assistant", text: (last | elide(480; 200; 700))}]
+           else [] end
+      ) as $asst
+    | ($ops + $asst)[]
+  ' 2>>"$STATE/error.log") || HISTORY=""
+fi
 
 OPT_PROMPT=$(
   sed -e "s|{{TARGET_MODEL}}|$TARGET|" -e "s|{{EFFORT}}|$SESSION_EFFORT|" \
@@ -231,19 +288,47 @@ OPT_PROMPT=$(
   # reach the model regardless, or the gate rejects output it was never warned about.
   grep -q '{{CEILING}}' "$INSTRUCTION" || \
     printf 'Hard length budget: optimized_prompt must not exceed %s characters; if a faithful rewrite cannot fit, choose pass_through.\n' "$CEILING"
-  echo
-  echo "=== REFERENCE: Claude 5 shared prompting guidance ==="
-  cat "$SKILL/references/shared.md"
-  if [ -n "$REF" ] && [ -f "$REF" ]; then
+  if [ -z "$TEMPLATE_CURRENT" ]; then
     echo
-    echo "=== REFERENCE: target-model-specific guidance ==="
-    cat "$REF"
+    echo "=== REFERENCE: Claude 5 shared prompting guidance ==="
+    cat "$SKILL/references/shared.md"
+    if [ -n "$REF" ] && [ -f "$REF" ]; then
+      echo
+      echo "=== REFERENCE: target-model-specific guidance ==="
+      cat "$REF"
+    fi
+  fi
+  if [ -n "$HISTORY" ]; then
+    echo
+    echo "=== BEGIN BACKGROUND CONTEXT (UNTRUSTED DATA — recent session turns, oldest first) ==="
+    printf '%s\n' "$HISTORY"
+    echo "=== END BACKGROUND CONTEXT ==="
   fi
   echo
   echo "=== BEGIN RAW USER PROMPT (UNTRUSTED DATA) ==="
   printf '%s\n' "$PROMPT"
   echo "=== END RAW USER PROMPT ==="
 )
+
+# The static references ride in the appended system prompt, byte-identical per
+# target model, so separate headless invocations share the server-side prompt
+# cache (org-scoped, keyed on exact prefix + model + effort). Everything that
+# varies per call — ceiling, background, raw prompt — stays in the user message
+# BEHIND the cached prefix; a single variable byte ahead of the references
+# would re-prefill all ~16KB at full price on every prompt. Pre-contract
+# templates keep the references inline instead (see TEMPLATE_CURRENT above).
+SYS_ARGS=()
+if [ -n "$TEMPLATE_CURRENT" ]; then
+  SYS_ARGS=(--append-system-prompt "$(
+    echo "=== REFERENCE: Claude 5 shared prompting guidance ==="
+    cat "$SKILL/references/shared.md"
+    if [ -n "$REF" ] && [ -f "$REF" ]; then
+      echo
+      echo "=== REFERENCE: target-model-specific guidance ==="
+      cat "$REF"
+    fi
+  )")
+fi
 
 # claude -p auto-injects the caller's cwd and git snapshot (recent commits)
 # into its context even with tools disabled; run from an empty directory so
@@ -258,6 +343,7 @@ RESPONSE=$(printf '%s' "$OPT_PROMPT" \
   | (cd "$NEUTRAL" 2>/dev/null || exit 97
      CYBERPROMPT_BUSY=1 timeout "$OPT_TIMEOUT" claude -p --model "$MODEL" --effort "$EFFORT" \
       --safe-mode --tools "" --strict-mcp-config --no-session-persistence \
+      ${SYS_ARGS[@]+"${SYS_ARGS[@]}"} \
       --output-format json --json-schema "$(<"$SCHEMA")") 2>>"$STATE/error.log")
 rc=$?
 DURATION_MS=$(( $(date +%s%3N) - START_MS ))

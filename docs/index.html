@@ -260,6 +260,13 @@
       run from an empty neutral dir so nothing of your repo — cwd, git log —
       leaks into the rewrite. Pasted logs in your prompt can't hijack a daemon
       that has no hands.</p></div>
+    <div class="card"><h3>Bounded recall</h3>
+      <p>The forge remembers just enough: your last few prompts and the
+      assistant's latest reply — never tool output — JSON-quarantined,
+      reference-resolution only. "The chief" resolves to <em>your</em> chief;
+      requirements still need a verbatim quote of <em>this</em> prompt. Topic
+      switch? The slice burns. <code>HISTORY_TURNS=0</code> goes back to
+      stateless.</p></div>
     <div class="card"><h3>Pass-through discipline</h3>
       <p>Already-clear prompts are left alone. Re-chroming preem is gonk
       vandalism.</p></div>

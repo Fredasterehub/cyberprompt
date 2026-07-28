@@ -51,7 +51,8 @@ So the architecture is paranoid by design:
 | **Deterministic gates** | Pure bash+jq validation — schema check, source-quote substring check, non-empty rewrite, length ceiling (a budget the forge is told up front, then held to anyway). Any failure → your original passes untouched. |
 | **`pass_through` discipline** | Already-clear prompts are left alone. Re-chroming preem is gonk vandalism. |
 | **Injection containment** | The optimizer call is non-agentic: `--safe-mode --tools "" --strict-mcp-config`. Pasted logs in your prompt can't hijack a daemon that has no hands. |
-| **Context quarantine** | Claude Code injects your cwd and recent git commits into headless calls even tool-less — so the forge runs from an empty, git-pinned neutral dir. The rewrite derives from your words alone; nothing about your repo leaks in. |
+| **Context quarantine** | Claude Code injects your cwd and recent git commits into headless calls even tool-less — so the forge runs from an empty, git-pinned neutral dir. Nothing about your repo leaks in. |
+| **Bounded recall** | The forge sees a research-sized slice of your session — your last few prompts plus the assistant's latest reply (never tool output), JSON-quarantined — so "the chief" resolves to *your* chief. Background may resolve references, never add requirements: those still need a verbatim quote of your prompt, and a topic switch discards the slice entirely. `HISTORY_TURNS=0` restores the stateless forge. |
 | **Fail-open, always** | Timeout, API error, malformed output, missing files — every failure path delivers your original prompt unchanged, with a visible warning. |
 
 ## ▸ The XP system

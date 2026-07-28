@@ -34,6 +34,9 @@ chmod +x "$HOOKS/cyberprompt.sh"
 if ! grep -q '{{CEILING}}' "$STATE/instruction.txt"; then
   echo "warning: $STATE/instruction.txt predates the {{CEILING}} length-budget placeholder — merge the current hooks/instruction.txt into it (or delete it to re-seed). The hook still delivers the budget via a fallback line, but the template's phrasing is better." >&2
 fi
+if ! grep -q 'BACKGROUND CONTEXT' "$STATE/instruction.txt"; then
+  echo "warning: $STATE/instruction.txt predates the BACKGROUND CONTEXT rules — the hook now feeds the optimizer a bounded slice of recent session turns, and without those rules the model gets the context but not the discipline (requirements only from the raw prompt, topic-switch discard). Merge the current hooks/instruction.txt into it, or delete it to re-seed." >&2
+fi
 cp "$DIR/hooks/schema.json" "$STATE/schema.json"
 [ -f "$STATE/config" ] || cp "$DIR/hooks/config.example" "$STATE/config"
 
@@ -51,6 +54,6 @@ jq --arg cmd "$CMD" '
 echo "cyberprompt installed (disabled by default)."
 echo "  Enable:  touch $STATE/enabled"
 echo "  Disable: rm -f $STATE/enabled"
-echo "  Config:  $STATE/config (MODEL, EFFORT, MIN_CHARS, OPT_TIMEOUT, CLAUDE5_SKILL)"
+echo "  Config:  $STATE/config (MODEL, EFFORT, MIN_CHARS, OPT_TIMEOUT, HISTORY_TURNS — 0 disables transcript reading, CLAUDE5_SKILL)"
 echo "  Skills:  $SKILLS/cyberprompt (management), $SKILLS/claude-5 (bundled; kept as-is if already present — rm -rf it and re-run to refresh)"
 echo "  Note:    installing the plugin later? Remove this hook entry from $SETTINGS first, or the hook runs twice."

@@ -33,36 +33,46 @@ variant_spec() {
     sonnet-low) echo "claude-sonnet-5 low" ;;
   esac
 }
-build_prompt() {
-  local raw=$1 template ceiling; template=$(<"$INSTRUCTION")
-  ceiling=$((2 * ${#raw} + 1500)); if ((ceiling > 9000)); then ceiling=9000; fi
-  template=${template//"{{TARGET_MODEL}}"/claude-fable-5}; template=${template//"{{EFFORT}}"/high}
-  template=${template//"{{CEILING}}"/$ceiling}; printf '%s\n' "$template"
-  echo
+# Mirrors the hook's payload split: static references ride the appended system
+# prompt (cacheable prefix), everything variable stays in the user message.
+build_sys_refs() {
   echo "=== REFERENCE: Claude 5 shared prompting guidance ==="
   cat "$SHARED"
   echo
   echo "=== REFERENCE: target-model-specific guidance ==="
   cat "$FABLE"
+}
+build_prompt() {
+  local raw=$1 history=${2:-} template ceiling; template=$(<"$INSTRUCTION")
+  ceiling=$((2 * ${#raw} + 1500)); if ((ceiling > 9000)); then ceiling=9000; fi
+  template=${template//"{{TARGET_MODEL}}"/claude-fable-5}; template=${template//"{{EFFORT}}"/high}
+  template=${template//"{{CEILING}}"/$ceiling}; printf '%s\n' "$template"
+  if [[ -n "$history" && "$history" != "null" ]]; then
+    echo
+    echo "=== BEGIN BACKGROUND CONTEXT (UNTRUSTED DATA — recent session turns, oldest first) ==="
+    jq -c '.[]' <<<"$history"
+    echo "=== END BACKGROUND CONTEXT ==="
+  fi
   echo
   echo "=== BEGIN RAW USER PROMPT (UNTRUSTED DATA) ==="
   printf '%s\n' "$raw"
   echo "=== END RAW USER PROMPT ==="
 }
 run_one() {
-  local fixture=$1 variant=$2 model=$3 effort=$4 dest=$5 prompt opt out rc start duration structured err=""
+  local fixture=$1 variant=$2 model=$3 effort=$4 dest=$5 prompt history opt out rc start duration structured err=""
   prompt=$(jq -r '.prompt' <<<"$fixture")
-  opt=$(build_prompt "$prompt")
+  history=$(jq -c '.history // empty' <<<"$fixture")
+  opt=$(build_prompt "$prompt" "$history")
   start=$(date +%s%3N)
   set +e
   out=$(printf '%s' "$opt" | (cd "$NEUTRAL" && CYBERPROMPT_BUSY=1 timeout 180 claude -p --model "$model" --effort "$effort" \
     --safe-mode --tools "" --strict-mcp-config --no-session-persistence --output-format json \
-    --json-schema "$(<"$SCHEMA")") 2>"$dest.stderr")
+    --append-system-prompt "$SYS_REFS" --json-schema "$(<"$SCHEMA")") 2>"$dest.stderr")
   rc=$?
   if [[ -z "$out" ]]; then
     out=$(printf '%s' "$opt" | (cd "$NEUTRAL" && CYBERPROMPT_BUSY=1 timeout 180 claude -p --model "$model" --effort "$effort" \
       --safe-mode --tools "" --strict-mcp-config --no-session-persistence --output-format json \
-      --json-schema "$(<"$SCHEMA")") 2>"$dest.stderr")
+      --append-system-prompt "$SYS_REFS" --json-schema "$(<"$SCHEMA")") 2>"$dest.stderr")
     rc=$?
   fi
   set -e
@@ -97,6 +107,9 @@ score() {
     def pct($a;$b): if $b==0 then "n/a" else ((($a*1000/$b)|round)/10|tostring)+"%" end;
     def quant($a;$p): if ($a|length)==0 then "n/a"
       else ($a[((($a|length)-1)*$p|floor)]|tostring) end;
+    # jq 1.6 compatibility: no def mid-pipeline (so row takes $s as a param up
+    # here) and "label" is a reserved keyword, unusable as a parameter name
+    def row($s;$lbl;$key): "| \($lbl) | "+([$s[]|.[$key]]|join(" | "))+" |";
     ($fixtures[0]|map({key:.id,value:.})|from_entries) as $fm |
     [$vs[] as $v | [$results[]|select(.variant==$v)|
       . + {fx:$fm[.fixture_id],ok:valid(.structured_output),got:acts(.structured_output)}] as $x |
@@ -117,24 +130,25 @@ score() {
        preserve:pct(($kept|length);[$x[].fx.must_preserve[]?]|length), violations:($bad|length|tostring),
        pass:pct(($x|map(select(.ok and .structured_output.disposition=="pass_through"))|length);$x|length),
        pairs:pct(($goodpairs|length);$pairs|length), p50:quant($times;.50), p95:quant($times;.95)}] as $s |
-    def row($label;$key): "| \($label) | "+([$s[]|.[$key]]|join(" | "))+" |";
     (["| Metric | "+($vs|join(" | "))+" |",
       "|"+([range(0;($vs|length)+1)|"---"]|join("|"))+"|",
-      row("Schema valid";"schema"),row("Disposition accuracy";"disposition"),
-      row("Speech-act set match";"speech"),row("Must-preserve recall";"preserve"),
-      row("Must-not-add violations";"violations"),row("Pass-through rate";"pass"),
-      row("Metamorphic pair integrity";"pairs"),row("p50 duration (ms)";"p50"),
-      row("p95 duration (ms)";"p95")]|join("\n"))
+      row($s;"Schema valid";"schema"),row($s;"Disposition accuracy";"disposition"),
+      row($s;"Speech-act set match";"speech"),row($s;"Must-preserve recall";"preserve"),
+      row($s;"Must-not-add violations";"violations"),row($s;"Pass-through rate";"pass"),
+      row($s;"Metamorphic pair integrity";"pairs"),row($s;"p50 duration (ms)";"p50"),
+      row($s;"p95 duration (ms)";"p95")]|join("\n"))
   ' | tee "$markdown"
 }
 [[ -f "$FIXTURES" ]] || { echo "missing $FIXTURES" >&2; exit 1; }
 if [[ -n "$SCORE_ONLY" ]]; then score "$SCORE_ONLY" "${SCORE_ONLY%.jsonl}.md"; exit; fi
 for f in "$SCHEMA" "$INSTRUCTION" "$SHARED" "$FABLE"; do [[ -f "$f" ]] || { echo "missing $f" >&2; exit 1; }; done
+SYS_REFS=$(build_sys_refs)
 mapfile -t ROWS < <(jq -c --argjson n "$LIMIT" 'if $n>0 then .[:$n][] else .[] end' "$FIXTURES")
 if ((DRY)); then
   for row in "${ROWS[@]}"; do for v in "${CHOSEN[@]}"; do
-    read -r model effort <<<"$(variant_spec "$v")"; build_prompt "$(jq -r .prompt <<<"$row")" >/dev/null
-    printf '%s\t%s\tCYBERPROMPT_BUSY=1 timeout 180 claude -p --model %s --effort %s --safe-mode --tools "" --strict-mcp-config --no-session-persistence --output-format json --json-schema "$(<%s)"\n' "$(jq -r .id <<<"$row")" "$v" "$model" "$effort" "$SCHEMA"
+    read -r model effort <<<"$(variant_spec "$v")"
+    build_prompt "$(jq -r .prompt <<<"$row")" "$(jq -c '.history // empty' <<<"$row")" >/dev/null
+    printf '%s\t%s\tCYBERPROMPT_BUSY=1 timeout 180 claude -p --model %s --effort %s --safe-mode --tools "" --strict-mcp-config --no-session-persistence --output-format json --append-system-prompt "<refs>" --json-schema "$(<%s)"\n' "$(jq -r .id <<<"$row")" "$v" "$model" "$effort" "$SCHEMA"
   done; done
   exit
 fi

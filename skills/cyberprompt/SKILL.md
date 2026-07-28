@@ -10,7 +10,12 @@ with a non-agentic headless `claude -p` call (--safe-mode, no tools/MCP,
 `OPT_TIMEOUT` seconds timeout — default 180, run from an empty neutral dir so
 no cwd/git context leaks in, JSON-schema output) armed with the claude-5 skill
 references
-(bundled with the plugin; `~/.claude/skills/claude-5` on manual installs), and
+(bundled with the plugin; `~/.claude/skills/claude-5` on manual installs —
+carried in the appended system prompt so the ~16KB static payload hits the
+server-side prompt cache across calls), plus a bounded background slice of the
+session transcript (last `HISTORY_TURNS` operator prompts + the assistant's
+latest text reply, JSON-escaped, reference-resolution only — never a source of
+requirements; empty slice = stateless call), and
 injects it as an ADVISORY contract in
 `additionalContext`: the original prompt stays authoritative; the rewrite
 (explicit task / constraints traceable to the original / non-binding
@@ -25,9 +30,9 @@ State directory: `~/.claude/cyberprompt/`
 | File | Role |
 |------|------|
 | `enabled` | Sentinel — exists = hook active. No restart needed either way. |
-| `config` | `MODEL=`, `EFFORT=` (pinned reasoning effort, default medium), `MIN_CHARS=`, `OPT_TIMEOUT=` (optimizer call timeout in seconds, default 180 — keep below the 200 s hook-level timeout), optional `CLAUDE5_SKILL=` override |
+| `config` | `MODEL=`, `EFFORT=` (pinned reasoning effort, default medium), `MIN_CHARS=`, `OPT_TIMEOUT=` (optimizer call timeout in seconds, default 180 — keep below the 200 s hook-level timeout), `HISTORY_TURNS=` (operator prompts shown as background context, default 4, `0` = stateless), optional `CLAUDE5_SKILL=` override |
 | `instruction.txt` | Optimizer system instruction template |
-| `log.jsonl` | Audit trail: `{ts, session, optimizer_model, target_model, original, optimized, disposition, duration_ms, gate_failure}` |
+| `log.jsonl` | Audit trail: `{ts, session, optimizer_model, target_model, original, optimized, disposition, duration_ms, context_chars, gate_failure}` |
 | `error.log` | stderr of failed `claude -p` calls |
 
 ## Install (first time for a user)

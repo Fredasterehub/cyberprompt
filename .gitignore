@@ -1,2 +1,5 @@
 results/
 *.log
+HANDOFF.md
+handoff-state.json
+.omc/
