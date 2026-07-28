@@ -2,8 +2,8 @@
   "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
   "name": "cyberprompt",
   "displayName": "CYBERPROMPT",
-  "version": "0.0.1",
-  "description": "Automatic prompt optimizer for Claude Code. A UserPromptSubmit hook intercepts every operator prompt, rewrites it via a non-agentic headless claude -p call armed with the bundled claude-5 prompting skill, validates the rewrite with deterministic gates, and injects it as an advisory contract — the original prompt stays authoritative. Fail-open by design, narrated by WORDRUNNER.EXE, levelled by an XP system.",
+  "version": "0.0.2",
+  "description": "Automatic prompt optimizer for Claude Code. A UserPromptSubmit hook intercepts every operator prompt, rewrites it via a non-agentic headless claude -p call armed with the bundled claude-5 prompting skill and a bounded slice of the session's recent turns (reference resolution only — requirements always trace to your own words), validates the rewrite with deterministic gates, and injects it as an advisory contract — the original prompt stays authoritative. Static references ride the prompt cache, so context costs nothing. Fail-open by design, narrated by WORDRUNNER.EXE, levelled by an XP system.",
   "author": {
     "name": "Fredastere",
     "url": "https://github.com/Fredasterehub"

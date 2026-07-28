@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "cyberprompt",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "CYBERPROMPT — your prompts jack in raw, they jack out preem. Advisory prompt rewriting for Claude Code, guarded by deterministic gates.",
   "owner": {
     "name": "Fredastere",
@@ -10,8 +10,8 @@
   "plugins": [
     {
       "name": "cyberprompt",
-      "description": "Automatic prompt optimizer: a UserPromptSubmit hook rewrites every prompt via a headless, tool-less claude -p call using the bundled claude-5 prompting references, validates the result with deterministic gates (schema, verbatim source quotes, length ceiling), and injects it as an advisory contract — the original prompt always wins. Includes the cyberprompt management skill and the claude-5 prompting skill.",
-      "version": "0.0.1",
+      "description": "Automatic prompt optimizer: a UserPromptSubmit hook rewrites every prompt via a headless, tool-less claude -p call using the bundled claude-5 prompting references plus a bounded, quarantined slice of recent session turns (reference resolution only), validates the result with deterministic gates (schema, verbatim source quotes, length ceiling), and injects it as an advisory contract — the original prompt always wins. Includes the cyberprompt management skill and the claude-5 prompting skill.",
+      "version": "0.0.2",
       "author": {
         "name": "Fredastere",
         "url": "https://github.com/Fredasterehub"
