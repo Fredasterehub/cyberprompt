@@ -5,8 +5,10 @@ description: Toggle and manage CYBERPROMPT, the automatic prompt-optimizer hook 
 
 # CYBERPROMPT — toggle & management
 
-A `UserPromptSubmit` hook that intercepts every operator prompt, rewrites it
-with a non-agentic headless `claude -p` call (--safe-mode, no tools/MCP,
+A `UserPromptSubmit` hook that intercepts every operator prompt, first cleans
+the optimizer's private copy by removing exact whole-line Whisper credit
+artifacts and collapsing runs of 3+ identical lines, then rewrites it with a
+non-agentic headless `claude -p` call (--safe-mode, no tools/MCP,
 `OPT_TIMEOUT` seconds timeout — default 180, run from an empty neutral dir so
 no cwd/git context leaks in, JSON-schema output) armed with the claude-5 skill
 references
@@ -20,19 +22,23 @@ injects it as an ADVISORY contract in
 `additionalContext`: the original prompt stays authoritative; the rewrite
 (explicit task / constraints traceable to the original / non-binding
 inferences / execution brief) is an execution aid. Deterministic gates reject
-bad rewrites (schema validation, source-quote substring check, length ceiling)
-and a `pass_through` disposition skips injection when the prompt is already
-clear. The operator sees the rewrite via `systemMessage`; every pair is logged
-with disposition/duration/gate_failure.
+bad rewrites (schema validation, non-empty source-quote substring checks,
+length ceiling, and retention of identifier-shaped content tokens unless an
+assumption explicitly accounts for the drop), and a `pass_through` disposition
+skips injection when the prompt is already clear. The optimizer instruction
+also distinguishes replacement self-repairs from additions, preserves
+questions and hedges, and permits only unambiguous surface-form ASR repairs
+with raw-quote provenance. The operator sees the rewrite via `systemMessage`;
+every pair is logged with disposition/duration/gate_failure.
 
 State directory: `~/.claude/cyberprompt/`
 
 | File | Role |
 |------|------|
 | `enabled` | Sentinel — exists = hook active. No restart needed either way. |
-| `config` | `MODEL=`, `EFFORT=` (pinned reasoning effort, default medium), `MIN_CHARS=`, `OPT_TIMEOUT=` (optimizer call timeout in seconds, default 180 — keep below the 200 s hook-level timeout), `HISTORY_TURNS=` (operator prompts shown as background context, default 4, `0` = stateless), optional `CLAUDE5_SKILL=` override |
+| `config` | `MODEL=`, `EFFORT=` (pinned reasoning effort, default medium), `MIN_CHARS=`, `OPT_TIMEOUT=` (optimizer call timeout in seconds, default 180 — keep below the 200 s hook-level timeout), `HISTORY_TURNS=` (operator prompts shown as background context, default 4, `0` = stateless), optional `CLAUDE5_SKILL=` override. Pre-optimizer strips and content retention are always on and have no config entries. |
 | `instruction.txt` | Optimizer system instruction template |
-| `log.jsonl` | Audit trail: `{ts, session, optimizer_model, target_model, original, optimized, disposition, duration_ms, context_chars, gate_failure}` |
+| `log.jsonl` | Audit trail: `{ts, session, optimizer_model, target_model, original, optimized, disposition, duration_ms, context_chars, assumptions, gate_failure}` |
 | `error.log` | stderr of failed `claude -p` calls |
 
 ## Install (first time for a user)
@@ -76,6 +82,16 @@ plugin (manual installs seed it to `~/.claude/skills/claude-5`); set
 - **Fail-open**: any failure (skill missing, `claude -p` error/timeout/empty
   output) passes the original prompt through unchanged and warns the operator
   via `systemMessage`.
+- **Pre-optimizer hygiene**: exact known Whisper credit lines and 3+ identical
+  line repetitions are removed only from the optimizer input. Embedded
+  mentions survive; an artifact-only result skips the optimizer; the original
+  submitted prompt remains authoritative and unchanged.
+- **Retention gate**: long `--flags`, explicit or dotted paths, snake/camel/
+  PascalCase identifiers, version-shaped tokens, and dotted filenames outside
+  inline quoted spans must remain verbatim in the execution brief or be quoted
+  in an assumption that accounts for their removal (assumptions are persisted
+  to log.jsonl). More than 25 discovered anchors disables this gate for
+  that paste-heavy prompt.
 - **Skipped automatically**: slash commands (`/...`), shell (`!`) and memory
   (`#`) shortcuts, prompts under `MIN_CHARS`, and all subagent prompts
   (`agent_id` present). Recursion into the hook's own `claude -p` call is

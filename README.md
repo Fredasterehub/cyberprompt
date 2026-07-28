@@ -48,7 +48,9 @@ So the architecture is paranoid by design:
 |---|---|
 | **Original is authoritative** | The rewrite is injected as an *advisory* contract: on any conflict, your original prompt wins. Stated in-band, enforced by framing. |
 | **Proof-carrying rewrites** | The optimizer must return structured JSON: explicit requirements each backed by a **verbatim quote** of your prompt, inferences quarantined as non-binding. |
-| **Deterministic gates** | Pure bash+jq validation — schema check, source-quote substring check, non-empty rewrite, length ceiling (a budget the forge is told up front, then held to anyway). Any failure → your original passes untouched. |
+| **Pre-optimizer hygiene** | On the optimizer's copy only, exact whole-line Whisper credit artifacts are removed and runs of 3+ identical lines collapse to one. Embedded mentions survive; your authoritative original is never replaced. |
+| **Deterministic gates** | Pure bash+jq validation — schema, non-empty verbatim source quotes, non-empty rewrite, length ceiling, and retention of identifier-shaped content tokens (long `--flags`, explicit or dotted paths, snake/camel/PascalCase identifiers, versions — outside inline-quoted spans). A token may disappear only when the optimizer quotes the drop in a non-binding assumption, which is persisted to the audit log. Any failure → your original passes untouched. |
+| **Spoken-intent discipline** | The optimizer distinguishes replacement self-repairs from additions, preserves questions/hedges instead of upgrading them to orders, and may repair only an unambiguous ASR surface error while keeping its raw quote and recording uncertain repairs. |
 | **`pass_through` discipline** | Already-clear prompts are left alone. Re-chroming preem is gonk vandalism. |
 | **Injection containment** | The optimizer call is non-agentic: `--safe-mode --tools "" --strict-mcp-config`. Pasted logs in your prompt can't hijack a daemon that has no hands. |
 | **Context quarantine** | Claude Code injects your cwd and recent git commits into headless calls even tool-less — so the forge runs from an empty, git-pinned neutral dir. Nothing about your repo leaks in. |
@@ -130,6 +132,8 @@ OPT_TIMEOUT=180           # forge call timeout, seconds (hook-level cap is 200)
 
 Plugin installs don't seed this file — the defaults above apply until you
 create it (the hook reads it whenever it exists). The manual installer seeds it.
+The pre-optimizer hygiene pass and content-token retention gate are always on;
+they have no config knobs.
 
 Defaults are **benchmarked, not vibed**: a 60-call evaluation matrix
 (20 fixtures × 3 variants, deterministic scoring — see [`harness/`](harness/))
@@ -142,15 +146,29 @@ The optimizer must answer in schema-validated JSON — and then survive mechanic
 review before a single word reaches your session:
 
 ```
-schema valid? ──▸ source_quotes verbatim in original? ──▸ length ≤ ceiling?
-     │                        │                                │
-     ▼ fail                   ▼ fail                           ▼ fail
-              ORIGINAL PASSES THROUGH UNCHANGED (logged, flagged)
+schema valid? ─▸ source_quotes valid? ─▸ within ceiling? ─▸ content tokens retained/accounted?
+     │                 │                    │                         │
+     ▼ fail            ▼ fail               ▼ fail                    ▼ fail
+                    ORIGINAL PASSES THROUGH UNCHANGED (logged, flagged)
 ```
 
 The ceiling scales with your original — 2×length + 1500 characters, capped at
 9000 — and the forge is told the budget up front: it tightens to fit or passes
 through, instead of meeting the ICE by surprise.
+
+The retention gate anchors flags, paths, snake/camel/Pascal identifiers,
+version-shaped tokens, and dotted filenames from the sanitized optimizer input.
+Common inline quoted spans are excluded because pasted data must remain
+droppable. Deliberate replacement repairs can drop an anchor only by naming the
+raw token in `assumptions`; silent loss fails open. Paste-heavy prompts with
+more than 25 discovered anchors skip this gate rather than being forced through
+an unreliable partial check.
+
+Before the optimizer call, exact known Whisper credit lines are stripped and
+3-or-more identical-line runs are collapsed on its private copy. These are
+whole-line operations: a phrase embedded in a real sentence is untouched. If
+only artifacts or whitespace remain, the optimizer is skipped. Claude Code
+still receives the operator's original prompt unchanged in every case.
 
 Everything is auditable: `~/.claude/cyberprompt/log.jsonl` records every
 original/optimized pair with disposition, duration, and gate verdicts.

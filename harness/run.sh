@@ -84,15 +84,31 @@ run_one() {
     --argjson structured "$structured" --argjson duration "$duration" --arg err "$err" \
     '{fixture_id:$id,variant:$variant,structured_output:$structured,duration_ms:$duration,
       error:(if $err=="" then null else $err end)}' >"$dest"
-  rm -f -- "$dest.stderr"
+  # Keep stderr when the call failed — it is the only diagnostic left behind.
+  [[ -n "$err" ]] || rm -f -- "$dest.stderr"
 }
 score() {
   local results=$1 markdown=$2 variants_json
   variants_json=$(printf '%s\n' "${CHOSEN[@]}" | jq -Rsc 'split("\n")[:-1]')
   jq -nr --argjson vs "$variants_json" --slurpfile fixtures "$FIXTURES" --slurpfile results "$results" '
-    def vocab: ["implement","investigate","fix","diagnose","review","modify","explain","build","test"];
-    def acts($s): [vocab[] as $v | select(any(($s.speech_acts // [])[]?;
-      (ascii_downcase | contains($v)))) | $v] | unique | sort;
+    # Bilingual stem lexicon: the optimizer labels speech acts in the prompt
+    # language (French prompts get French labels), so each canonical act
+    # matches on English and French stems. Keys stay the canonical vocabulary.
+    def lex: {
+      "implement":   ["implement","implément","implemente"],
+      "investigate": ["investigate","investigu","enquêt","enquet"],
+      "fix":         ["fix","corrig","répar","repar"],
+      "diagnose":    ["diagnos"],
+      "review":      ["review","revue","relis","relect"],
+      "modify":      ["modify","modif"],
+      "explain":     ["explain","expli"],
+      "build":       ["build","construi"],
+      "test":        ["test"]
+    };
+    def acts($s): [lex | to_entries[] | . as $e
+      | select(any(($s.speech_acts // [])[]?; ascii_downcase as $t
+          | any($e.value[]; . as $m | $t | contains($m))))
+      | $e.key] | unique | sort;
     def valid($s): ($s|type)=="object" and
       (($s|keys|sort)==(["assumptions","disposition","explicit_requirements","optimized_prompt","speech_acts"]|sort)) and
       ($s.disposition=="rewrite" or $s.disposition=="pass_through") and
@@ -166,4 +182,7 @@ for row in "${ROWS[@]}"; do for v in "${CHOSEN[@]}"; do
 done; done
 wait
 for part in "$TMP"/call-*.json; do cat "$part" >>"$RESULTS"; done
+for e in "$TMP"/call-*.json.stderr; do
+  if [ -f "$e" ]; then cp -- "$e" "${RESULTS%.jsonl}-$(basename "$e")"; fi
+done
 score "$RESULTS" "${RESULTS%.jsonl}.md"

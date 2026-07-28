@@ -37,6 +37,9 @@ fi
 if ! grep -q 'BACKGROUND CONTEXT' "$STATE/instruction.txt"; then
   echo "warning: $STATE/instruction.txt predates the BACKGROUND CONTEXT rules — the hook now feeds the optimizer a bounded slice of recent session turns, and without those rules the model gets the context but not the discipline (requirements only from the raw prompt, topic-switch discard). Merge the current hooks/instruction.txt into it, or delete it to re-seed." >&2
 fi
+if ! grep -q 'QUOTED VERBATIM inside an assumption' "$STATE/instruction.txt"; then
+  echo "warning: $STATE/instruction.txt predates the v0.0.3 spoken-input rules (self-repair resolution, question/hedge preservation, bounded ASR repair, retention accounting) — the retention gate still protects tokens, but the optimizer won't know to quote justified drops in assumptions. Merge the current hooks/instruction.txt into it, or delete it to re-seed." >&2
+fi
 cp "$DIR/hooks/schema.json" "$STATE/schema.json"
 [ -f "$STATE/config" ] || cp "$DIR/hooks/config.example" "$STATE/config"
 

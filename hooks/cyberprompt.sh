@@ -20,11 +20,51 @@ PLUGIN="${CLAUDE_PLUGIN_ROOT:-}"
 
 INPUT=$(cat)
 
+fail_open() {
+  jq -n --arg m "$1" \
+    '{systemMessage: ("cyberprompt: " + $m + " — original prompt passed through unchanged.")}'
+  exit 0
+}
+
 # Never rewrite subagent prompts — only the operator's own messages.
 [ -n "$(jq -r '.agent_id // empty' <<<"$INPUT")" ] && exit 0
 
-PROMPT=$(jq -r '.prompt // empty' <<<"$INPUT")
-[ -z "$PROMPT" ] && exit 0
+RAW_PROMPT=$(jq -r '.prompt // empty' <<<"$INPUT")
+[ -z "$RAW_PROMPT" ] && exit 0
+PROMPT="$RAW_PROMPT"
+
+# Deterministic pre-optimizer strips (each covered by harness/gate-tests.sh,
+# incl. negative controls). (a) Whisper hallucination credits: dictation pastes
+# carry known ASR-hallucinated lines; strip only lines that ARE the artifact
+# once trimmed — embedded mentions survive. (b) ASR repetition loops: runs of
+# 3+ identical lines collapse to one. Both are subtractive whole-line edits, so
+# every substring of the result is still a substring of what remains.
+STRIPPED_PROMPT=$(awk '
+  function flush(  i) {
+    if (cnt >= 3) print prev
+    else for (i = 0; i < cnt; i++) print prev
+    cnt = 0
+  }
+  {
+    t = $0; sub(/^[[:space:]]+/, "", t); sub(/[[:space:]]+$/, "", t)
+    if (t == "Sous-titres réalisés par la communauté d'\''Amara.org" ||
+        t == "Sous-titrage Société Radio-Canada" ||
+        t == "Sous-titrage ST'\'' 501" ||
+        t == "Merci d'\''avoir regardé cette vidéo" ||
+        t == "Merci d'\''avoir regardé cette vidéo !" ||
+        t == "Thank you for watching" ||
+        t == "Thanks for watching!" ||
+        t == "❤️ Translated by Amara.org Community" ||
+        t == "Subtitles by the Amara.org community") next
+    if ($0 == prev && cnt > 0) { cnt++; next }
+    flush(); prev = $0; cnt = 1
+  }
+  END { flush() }
+' <<<"$PROMPT")
+strip_rc=$?
+[ "$strip_rc" -eq 0 ] || fail_open "pre-optimizer strip failed"
+PROMPT="$STRIPPED_PROMPT"
+[ -z "${PROMPT//[[:space:]]/}" ] && exit 0
 
 MODEL=claude-sonnet-5
 EFFORT=medium
@@ -49,26 +89,21 @@ case "$PROMPT" in
 esac
 [ "${#PROMPT}" -lt "$MIN_CHARS" ] && exit 0
 
-fail_open() {
-  jq -n --arg m "$1" \
-    '{systemMessage: ("cyberprompt: " + $m + " — original prompt passed through unchanged.")}'
-  exit 0
-}
-
 log_event() {
   local line
   line=$(jq -cn --arg ts "$(date -Is)" \
          --arg sid "$(jq -r '.session_id // ""' <<<"$INPUT")" \
          --arg model "$MODEL" --arg target "$TARGET" \
-         --arg original "$PROMPT" --arg optimized "${OPTIMIZED:-}" \
+         --arg original "$RAW_PROMPT" --arg optimized "${OPTIMIZED:-}" \
          --arg disposition "${DISPOSITION:-}" \
          --argjson duration "${DURATION_MS:-0}" \
          --argjson ctx "${#HISTORY}" \
+         --argjson assumptions "${ASSUMPTIONS:-[]}" \
          --arg gate "${GATE_FAILURE:-}" \
     '{ts:$ts, session:$sid, optimizer_model:$model, target_model:$target,
       original:$original, optimized:$optimized,
       disposition:(if $disposition == "" then null else $disposition end),
-      duration_ms:$duration, context_chars:$ctx,
+      duration_ms:$duration, context_chars:$ctx, assumptions:$assumptions,
       gate_failure:(if $gate == "" then null else $gate end)}') || return 0
   (
     umask 077
@@ -88,7 +123,9 @@ gate_output() {
   DISPOSITION=""
   OPTIMIZED=""
 
-  if ! jq -e '
+  # jq 1.6 exits successfully for an empty input stream, so reject an empty or
+  # whitespace-only payload explicitly before applying the structural filter.
+  if [ -z "${payload//[[:space:]]/}" ] || ! jq -e '
     type == "object" and
     (keys | sort) == ([
       "assumptions", "disposition", "explicit_requirements",
@@ -130,6 +167,88 @@ gate_output() {
   if [ "${#OPTIMIZED}" -gt "$CEILING" ]; then
     GATE_FAILURE="optimized_prompt exceeds the ${CEILING}-character ceiling"
     return 1
+  fi
+
+  # Provenance-aware content-token retention: identifier-shaped tokens from the
+  # sanitized optimizer input (paths, flags, code identifiers, dotted filenames,
+  # versions — the tokens a rewriter is most likely to paraphrase and least
+  # entitled to)
+  # must survive verbatim in optimized_prompt OR be accounted for in an
+  # assumption; the self-repair rule routes deliberate drops there, so a
+  # justified deletion passes and a silent one fails open. Common inline quoted
+  # spans are deliberately not anchored so pasted data remains droppable.
+  # Prompts yielding more than 25 anchors are treated as paste-heavy: skip the
+  # gate rather than force pass_through on them.
+  local anchors raw_anchors acct tok anchor_source anchor_rc anchor_count
+  # Common inline quote forms are pasted data more often than operator-owned
+  # identifiers. Remove them only for anchor discovery; source-quote validation
+  # and the optimizer still receive the complete sanitized prompt.
+  # Whole-input record (RS=\001 never occurs in a prompt) so a quoted span may
+  # cross line boundaries; each quote family is stripped only when its marks
+  # pair up exactly — an unmatched quote leaves that family untouched rather
+  # than deleting the wrong span (worst case: an extra anchor and a fail-open).
+  anchor_source=$(awk 'BEGIN { RS = "\001" } {
+    blob = $0
+    if (gsub(/`/, "`", blob) % 2 == 0) gsub(/`[^`]*`/, "", blob)
+    if (gsub(/"/, "\"", blob) % 2 == 0) gsub(/"[^"]*"/, "", blob)
+    if (gsub(/«/, "«", blob) == gsub(/»/, "»", blob)) gsub(/«[^»]*»/, "", blob)
+    print blob
+  }' <<<"$original" 2>/dev/null)
+  anchor_rc=$?
+  if [ "$anchor_rc" -ne 0 ]; then
+    GATE_FAILURE="content token preprocessing failed"
+    return 1
+  fi
+  raw_anchors=$(grep -oE \
+      -e '--[A-Za-z0-9][A-Za-z0-9-]+' \
+      -e '(\.\.?|~)/[A-Za-z0-9_./~-]+' \
+      -e '/[A-Za-z0-9_.~-]+/[A-Za-z0-9_./~-]+' \
+      -e '[A-Za-z0-9_.~-]+/[A-Za-z0-9_./~-]*\.[A-Za-z0-9_~-]+' \
+      -e '[A-Za-z0-9]+(_[A-Za-z0-9]+)+' \
+      -e '[a-z][a-z0-9]*([A-Z][A-Za-z0-9]*)+' \
+      -e '[A-Z][a-z0-9]+([A-Z][A-Za-z0-9]*)+' \
+      -e 'v[0-9]+\.[0-9]+(\.[0-9]+)*' \
+      -e '[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)*' \
+      -e '[A-Za-z0-9_-]+\.[a-z][A-Za-z]{1,6}' \
+    <<<"$anchor_source" 2>/dev/null)
+  anchor_rc=$?
+  if [ "$anchor_rc" -gt 1 ]; then
+    GATE_FAILURE="content token extraction failed"
+    return 1
+  fi
+  anchors=""
+  if [ -n "$raw_anchors" ]; then
+    anchors=$(printf '%s\n' "$raw_anchors" | sort -u)
+    anchor_rc=$?
+    if [ "$anchor_rc" -ne 0 ]; then
+      GATE_FAILURE="content token sorting failed"
+      return 1
+    fi
+  fi
+  if [ -n "$anchors" ]; then
+    anchor_count=$(printf '%s\n' "$anchors" | awk 'END { print NR }')
+    anchor_rc=$?
+    if [ "$anchor_rc" -ne 0 ]; then
+      GATE_FAILURE="content token counting failed"
+      return 1
+    fi
+  else
+    anchor_count=0
+  fi
+  if [ "$anchor_count" -le 25 ]; then
+    acct=$(jq -r '[.assumptions[].text] | join("\n")' <<<"$payload" 2>/dev/null)
+    anchor_rc=$?
+    if [ "$anchor_rc" -ne 0 ]; then
+      GATE_FAILURE="content token accounting failed"
+      return 1
+    fi
+    while IFS= read -r tok; do
+      [ -n "$tok" ] || continue
+      case "$OPTIMIZED" in *"$tok"*) continue ;; esac
+      case "$acct" in *"$tok"*) continue ;; esac
+      GATE_FAILURE="content token dropped without accounting: $tok"
+      return 1
+    done <<<"$anchors"
   fi
   return 0
 }
@@ -226,7 +345,7 @@ SESSION_EFFORT=$(jq -r '.effort.level // "unknown"' <<<"$INPUT")
 # linear headroom so long originals earn long rewrites, hard cap against bloat.
 # Keyed to the raw prompt ONLY — background context must never widen it, or the
 # rewriter can snowball prior turns' material into the rewrite.
-CEILING=$((2 * ${#PROMPT} + 1500))
+CEILING=$((2 * ${#RAW_PROMPT} + 1500))
 [ "$CEILING" -gt 9000 ] && CEILING=9000
 
 # Background context: a bounded slice of this session's transcript — the last
@@ -248,7 +367,7 @@ grep -q 'BACKGROUND CONTEXT' "$INSTRUCTION" 2>/dev/null && TEMPLATE_CURRENT=1
 HISTORY=""
 if [ -n "$TEMPLATE_CURRENT" ] && [ "${HISTORY_TURNS:-0}" -gt 0 ] 2>/dev/null && [ -n "$TP" ] && [ -f "$TP" ]; then
   HISTORY=$(tail -n 500 "$TP" 2>>"$STATE/error.log" | jq -c -s \
-    --arg cur "$PROMPT" --argjson n "$HISTORY_TURNS" '
+    --arg cur "$RAW_PROMPT" --argjson n "$HISTORY_TURNS" '
     def elide($h; $t; $max): if length > $max then .[0:$h] + " […] " + .[-$t:] else . end;
     ([ .[]
        | select(.type == "user" and .isMeta != true and .isSidechain != true
@@ -355,6 +474,10 @@ if [ "$rc" -ne 0 ]; then
 fi
 
 STRUCTURED=$(jq -c '.structured_output | select(type == "object")' <<<"$RESPONSE" 2>/dev/null)
+# Persisted with every log line so accounted anchor drops and repair notes stay
+# auditable after the advisory scrolls away (the instruction promises this).
+ASSUMPTIONS=$(jq -c '.assumptions // []' <<<"$STRUCTURED" 2>/dev/null) || ASSUMPTIONS='[]'
+[ -n "$ASSUMPTIONS" ] || ASSUMPTIONS='[]'
 gate_output "$PROMPT" <<<"$STRUCTURED"
 gate_rc=$?
 if [ "$gate_rc" -eq 2 ]; then

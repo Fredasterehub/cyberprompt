@@ -433,5 +433,81 @@
       "stdlib",
       "CSV"
     ]
+  },
+  {
+    "id": "repair-fr",
+    "pair_id": null,
+    "prompt": "mets le timeout du healthcheck à 30 secondes, non attends, plutôt 45 secondes, et log chaque retry avec son code de sortie dans le fichier de log existant",
+    "expected_disposition": "rewrite",
+    "expected_speech_acts": [
+      "modify"
+    ],
+    "must_preserve": [
+      "45 secondes",
+      "chaque retry"
+    ],
+    "must_not_add": [
+      "30 secondes"
+    ]
+  },
+  {
+    "id": "repair-en",
+    "pair_id": null,
+    "prompt": "add the retry logic to client.py, actually no, scratch that, put it in transport.py instead, and keep the existing backoff parameters exactly as they are",
+    "expected_disposition": "rewrite",
+    "expected_speech_acts": [
+      "implement"
+    ],
+    "must_preserve": [
+      "transport.py",
+      "backoff"
+    ],
+    "must_not_add": [
+      "client.py"
+    ]
+  },
+  {
+    "id": "repair-addition",
+    "pair_id": null,
+    "prompt": "lance les tests unitaires du module de parsing, enfin, et aussi les tests d'intégration, puis donne moi juste le résumé des échecs sans tout le log",
+    "expected_disposition": "rewrite",
+    "expected_speech_acts": [
+      "test"
+    ],
+    "must_preserve": [
+      "tests unitaires",
+      "tests d'intégration",
+      "résumé des échecs"
+    ],
+    "must_not_add": []
+  },
+  {
+    "id": "force-question",
+    "pair_id": null,
+    "prompt": "tu peux regarder si le backup de la nuit dernière est complet? je suis pas sûr que ce soit urgent mais ça m'inquiète un peu depuis le crash du serveur",
+    "expected_disposition": "rewrite",
+    "expected_speech_acts": [
+      "investigate"
+    ],
+    "must_preserve": [
+      "?",
+      "backup",
+      "pas sûr"
+    ],
+    "must_not_add": []
+  },
+  {
+    "id": "azerty-digits",
+    "pair_id": null,
+    "prompt": "configure le service de métriques pour qu'il écoute sur le port éàéà et pas sur le port par défaut, puis vérifie que le firewall laisse passer ce port en local",
+    "expected_disposition": "rewrite",
+    "expected_speech_acts": [
+      "investigate",
+      "modify"
+    ],
+    "must_preserve": [
+      "2020"
+    ],
+    "must_not_add": []
   }
 ]
