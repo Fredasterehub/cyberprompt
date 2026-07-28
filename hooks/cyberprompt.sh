@@ -29,6 +29,7 @@ PROMPT=$(jq -r '.prompt // empty' <<<"$INPUT")
 MODEL=claude-sonnet-5
 EFFORT=medium
 MIN_CHARS=80
+OPT_TIMEOUT=180
 [ -f "$STATE/config" ] && . "$STATE/config"
 # claude-5 skill: explicit override > plugin-bundled copy > legacy seeded copy.
 SKILL="${CLAUDE5_SKILL:-${PLUGIN:+$PLUGIN/skills/claude-5}}"
@@ -79,7 +80,7 @@ log_event() {
 }
 
 gate_output() {
-  local original="$1" payload ceiling
+  local original="$1" payload
   payload=$(cat)
   GATE_FAILURE=""
   DISPOSITION=""
@@ -123,10 +124,8 @@ gate_output() {
     GATE_FAILURE="optimized_prompt is empty"
     return 1
   fi
-  ceiling=$((3 * ${#original} / 2 + 1000))
-  [ "$ceiling" -gt 9000 ] && ceiling=9000
-  if [ "${#OPTIMIZED}" -gt "$ceiling" ]; then
-    GATE_FAILURE="optimized_prompt exceeds the ${ceiling}-character ceiling"
+  if [ "${#OPTIMIZED}" -gt "$CEILING" ]; then
+    GATE_FAILURE="optimized_prompt exceeds the ${CEILING}-character ceiling"
     return 1
   fi
   return 0
@@ -220,8 +219,18 @@ esac
 
 SESSION_EFFORT=$(jq -r '.effort.level // "unknown"' <<<"$INPUT")
 
+# Length ceiling shared by the instruction's stated budget and the output gate:
+# linear headroom so long originals earn long rewrites, hard cap against bloat.
+CEILING=$((2 * ${#PROMPT} + 1500))
+[ "$CEILING" -gt 9000 ] && CEILING=9000
+
 OPT_PROMPT=$(
-  sed -e "s|{{TARGET_MODEL}}|$TARGET|" -e "s|{{EFFORT}}|$SESSION_EFFORT|" "$INSTRUCTION"
+  sed -e "s|{{TARGET_MODEL}}|$TARGET|" -e "s|{{EFFORT}}|$SESSION_EFFORT|" \
+      -e "s|{{CEILING}}|$CEILING|" "$INSTRUCTION"
+  # Stale or user-customized templates may predate {{CEILING}}; the budget must
+  # reach the model regardless, or the gate rejects output it was never warned about.
+  grep -q '{{CEILING}}' "$INSTRUCTION" || \
+    printf 'Hard length budget: optimized_prompt must not exceed %s characters; if a faithful rewrite cannot fit, choose pass_through.\n' "$CEILING"
   echo
   echo "=== REFERENCE: Claude 5 shared prompting guidance ==="
   cat "$SKILL/references/shared.md"
@@ -236,11 +245,20 @@ OPT_PROMPT=$(
   echo "=== END RAW USER PROMPT ==="
 )
 
+# claude -p auto-injects the caller's cwd and git snapshot (recent commits)
+# into its context even with tools disabled; run from an empty directory so
+# the rewrite stays prompt-only. The empty repo pins git discovery here —
+# without it, a dotfiles repo at $HOME would leak its commits instead.
+NEUTRAL="$STATE/neutral"
+mkdir -p "$NEUTRAL" 2>/dev/null
+[ -d "$NEUTRAL/.git" ] || git -C "$NEUTRAL" init -q 2>/dev/null
+
 START_MS=$(date +%s%3N)
 RESPONSE=$(printf '%s' "$OPT_PROMPT" \
-  | CYBERPROMPT_BUSY=1 timeout 60 claude -p --model "$MODEL" --effort "$EFFORT" \
+  | (cd "$NEUTRAL" 2>/dev/null || exit 97
+     CYBERPROMPT_BUSY=1 timeout "$OPT_TIMEOUT" claude -p --model "$MODEL" --effort "$EFFORT" \
       --safe-mode --tools "" --strict-mcp-config --no-session-persistence \
-      --output-format json --json-schema "$(<"$SCHEMA")" 2>>"$STATE/error.log")
+      --output-format json --json-schema "$(<"$SCHEMA")") 2>>"$STATE/error.log")
 rc=$?
 DURATION_MS=$(( $(date +%s%3N) - START_MS ))
 if [ "$rc" -ne 0 ]; then

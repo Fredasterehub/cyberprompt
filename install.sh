@@ -31,6 +31,9 @@ fi
 cp "$DIR/hooks/cyberprompt.sh" "$HOOKS/cyberprompt.sh"
 chmod +x "$HOOKS/cyberprompt.sh"
 [ -f "$STATE/instruction.txt" ] || cp "$DIR/hooks/instruction.txt" "$STATE/instruction.txt"
+if ! grep -q '{{CEILING}}' "$STATE/instruction.txt"; then
+  echo "warning: $STATE/instruction.txt predates the {{CEILING}} length-budget placeholder — merge the current hooks/instruction.txt into it (or delete it to re-seed). The hook still delivers the budget via a fallback line, but the template's phrasing is better." >&2
+fi
 cp "$DIR/hooks/schema.json" "$STATE/schema.json"
 [ -f "$STATE/config" ] || cp "$DIR/hooks/config.example" "$STATE/config"
 
@@ -38,13 +41,16 @@ cp "$DIR/hooks/schema.json" "$STATE/schema.json"
 CMD='$HOME/.claude/hooks/cyberprompt.sh'
 jq --arg cmd "$CMD" '
   .hooks.UserPromptSubmit = ((.hooks.UserPromptSubmit // [])
-    | if any(.[]?.hooks[]?; .command == $cmd) then .
-      else . + [{hooks: [{type: "command", command: $cmd, timeout: 90}]}] end)
+    | if any(.[]?.hooks[]?; .command == $cmd)
+      then map(if any(.hooks[]?; .command == $cmd)
+        then .hooks |= map(if .command == $cmd then .timeout = 200 else . end)
+        else . end)
+      else . + [{hooks: [{type: "command", command: $cmd, timeout: 200}]}] end)
 ' "$SETTINGS" > "$SETTINGS.tmp" && mv "$SETTINGS.tmp" "$SETTINGS"
 
 echo "cyberprompt installed (disabled by default)."
 echo "  Enable:  touch $STATE/enabled"
 echo "  Disable: rm -f $STATE/enabled"
-echo "  Config:  $STATE/config (MODEL, EFFORT, MIN_CHARS, CLAUDE5_SKILL)"
+echo "  Config:  $STATE/config (MODEL, EFFORT, MIN_CHARS, OPT_TIMEOUT, CLAUDE5_SKILL)"
 echo "  Skills:  $SKILLS/cyberprompt (management), $SKILLS/claude-5 (bundled; kept as-is if already present — rm -rf it and re-run to refresh)"
 echo "  Note:    installing the plugin later? Remove this hook entry from $SETTINGS first, or the hook runs twice."

@@ -6,8 +6,10 @@ description: Toggle and manage CYBERPROMPT, the automatic prompt-optimizer hook 
 # CYBERPROMPT — toggle & management
 
 A `UserPromptSubmit` hook that intercepts every operator prompt, rewrites it
-with a non-agentic headless `claude -p` call (--safe-mode, no tools/MCP, 60 s
-timeout, JSON-schema output) armed with the claude-5 skill references
+with a non-agentic headless `claude -p` call (--safe-mode, no tools/MCP,
+`OPT_TIMEOUT` seconds timeout — default 180, run from an empty neutral dir so
+no cwd/git context leaks in, JSON-schema output) armed with the claude-5 skill
+references
 (bundled with the plugin; `~/.claude/skills/claude-5` on manual installs), and
 injects it as an ADVISORY contract in
 `additionalContext`: the original prompt stays authoritative; the rewrite
@@ -23,7 +25,7 @@ State directory: `~/.claude/cyberprompt/`
 | File | Role |
 |------|------|
 | `enabled` | Sentinel — exists = hook active. No restart needed either way. |
-| `config` | `MODEL=`, `EFFORT=` (pinned reasoning effort, default medium), `MIN_CHARS=`, optional `CLAUDE5_SKILL=` override |
+| `config` | `MODEL=`, `EFFORT=` (pinned reasoning effort, default medium), `MIN_CHARS=`, `OPT_TIMEOUT=` (optimizer call timeout in seconds, default 180 — keep below the 200 s hook-level timeout), optional `CLAUDE5_SKILL=` override |
 | `instruction.txt` | Optimizer system instruction template |
 | `log.jsonl` | Audit trail: `{ts, session, optimizer_model, target_model, original, optimized, disposition, duration_ms, gate_failure}` |
 | `error.log` | stderr of failed `claude -p` calls |

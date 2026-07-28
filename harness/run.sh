@@ -34,8 +34,10 @@ variant_spec() {
   esac
 }
 build_prompt() {
-  local raw=$1 template; template=$(<"$INSTRUCTION")
-  template=${template//"{{TARGET_MODEL}}"/claude-fable-5}; template=${template//"{{EFFORT}}"/high}; printf '%s\n' "$template"
+  local raw=$1 template ceiling; template=$(<"$INSTRUCTION")
+  ceiling=$((2 * ${#raw} + 1500)); if ((ceiling > 9000)); then ceiling=9000; fi
+  template=${template//"{{TARGET_MODEL}}"/claude-fable-5}; template=${template//"{{EFFORT}}"/high}
+  template=${template//"{{CEILING}}"/$ceiling}; printf '%s\n' "$template"
   echo
   echo "=== REFERENCE: Claude 5 shared prompting guidance ==="
   cat "$SHARED"
@@ -53,14 +55,14 @@ run_one() {
   opt=$(build_prompt "$prompt")
   start=$(date +%s%3N)
   set +e
-  out=$(printf '%s' "$opt" | CYBERPROMPT_BUSY=1 timeout 90 claude -p --model "$model" --effort "$effort" \
+  out=$(printf '%s' "$opt" | (cd "$NEUTRAL" && CYBERPROMPT_BUSY=1 timeout 180 claude -p --model "$model" --effort "$effort" \
     --safe-mode --tools "" --strict-mcp-config --no-session-persistence --output-format json \
-    --json-schema "$(<"$SCHEMA")" 2>"$dest.stderr")
+    --json-schema "$(<"$SCHEMA")") 2>"$dest.stderr")
   rc=$?
   if [[ -z "$out" ]]; then
-    out=$(printf '%s' "$opt" | CYBERPROMPT_BUSY=1 timeout 90 claude -p --model "$model" --effort "$effort" \
+    out=$(printf '%s' "$opt" | (cd "$NEUTRAL" && CYBERPROMPT_BUSY=1 timeout 180 claude -p --model "$model" --effort "$effort" \
       --safe-mode --tools "" --strict-mcp-config --no-session-persistence --output-format json \
-      --json-schema "$(<"$SCHEMA")" 2>"$dest.stderr")
+      --json-schema "$(<"$SCHEMA")") 2>"$dest.stderr")
     rc=$?
   fi
   set -e
@@ -132,7 +134,7 @@ mapfile -t ROWS < <(jq -c --argjson n "$LIMIT" 'if $n>0 then .[:$n][] else .[] e
 if ((DRY)); then
   for row in "${ROWS[@]}"; do for v in "${CHOSEN[@]}"; do
     read -r model effort <<<"$(variant_spec "$v")"; build_prompt "$(jq -r .prompt <<<"$row")" >/dev/null
-    printf '%s\t%s\tCYBERPROMPT_BUSY=1 timeout 90 claude -p --model %s --effort %s --safe-mode --tools "" --strict-mcp-config --no-session-persistence --output-format json --json-schema "$(<%s)"\n' "$(jq -r .id <<<"$row")" "$v" "$model" "$effort" "$SCHEMA"
+    printf '%s\t%s\tCYBERPROMPT_BUSY=1 timeout 180 claude -p --model %s --effort %s --safe-mode --tools "" --strict-mcp-config --no-session-persistence --output-format json --json-schema "$(<%s)"\n' "$(jq -r .id <<<"$row")" "$v" "$model" "$effort" "$SCHEMA"
   done; done
   exit
 fi
@@ -140,6 +142,9 @@ mkdir -p "$HERE/results"
 RUNSTAMP=$(date +%Y%m%dT%H%M%S)
 RESULTS=$HERE/results/$RUNSTAMP.jsonl
 TMP=$(mktemp -d); trap 'rm -rf -- "$TMP"' EXIT; : >"$RESULTS"; active=0; index=0
+# Same neutral-cwd regime as the production hook: claude -p injects cwd + git
+# context even tool-less; an empty repo here keeps benchmarks representative.
+NEUTRAL=$TMP/neutral; mkdir -p "$NEUTRAL"; git -C "$NEUTRAL" init -q 2>/dev/null || true
 for row in "${ROWS[@]}"; do for v in "${CHOSEN[@]}"; do
   read -r model effort <<<"$(variant_spec "$v")"; index=$((index+1))
   run_one "$row" "$v" "$model" "$effort" "$TMP/call-$(printf %04d "$index").json" &

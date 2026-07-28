@@ -9,6 +9,10 @@ MODEL=claude-sonnet-5
 EFFORT=medium
 # Prompts shorter than this many characters pass through unoptimized.
 MIN_CHARS=80
+# Seconds the hook waits for the optimizer call before failing open. Keep this
+# below the hook-level timeout registered in hooks.json/settings.json (200),
+# or the harness kills the hook before it can fail open with a message.
+OPT_TIMEOUT=180
 # Optional: override where the claude-5 skill lives (default: ~/.claude/skills/claude-5,
 # seeded by install.sh from the bundled copy; set this to bring your own prompting guide)
 #CLAUDE5_SKILL=/path/to/claude-5
