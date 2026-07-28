@@ -11,7 +11,10 @@
   "properties": {
     "disposition": {
       "type": "string",
-      "enum": ["rewrite", "pass_through"]
+      "enum": [
+        "rewrite",
+        "pass_through"
+      ]
     },
     "speech_acts": {
       "type": "array",
@@ -24,10 +27,14 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["source_quote", "normalized"],
+        "required": [
+          "source_quote",
+          "normalized"
+        ],
         "properties": {
           "source_quote": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1
           },
           "normalized": {
             "type": "string"
@@ -40,7 +47,10 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["text", "confidence"],
+        "required": [
+          "text",
+          "confidence"
+        ],
         "properties": {
           "text": {
             "type": "string"

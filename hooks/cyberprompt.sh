@@ -117,9 +117,10 @@ gate_output() {
   [ "$DISPOSITION" = "pass_through" ] && return 2
 
   if ! jq -e --arg original "$original" '
-    all(.explicit_requirements[]; .source_quote as $q | $original | contains($q))
+    all(.explicit_requirements[];
+      .source_quote as $q | ($q | length) > 0 and ($original | contains($q)))
   ' <<<"$payload" >/dev/null 2>&1; then
-    GATE_FAILURE="source_quote is not an exact substring of the original prompt"
+    GATE_FAILURE="source_quote is empty or not an exact substring of the original prompt"
     return 1
   fi
   if [ -z "$OPTIMIZED" ]; then
