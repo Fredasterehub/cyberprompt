@@ -1,0 +1,26 @@
+{
+  "skill_name": "claude-5",
+  "evals": [
+    {
+      "id": 0,
+      "name": "opus5-migration-legacy-review-bot",
+      "prompt": "We're upgrading our PR review bot from claude-opus-4-6 to claude-opus-5. Here's the current setup — update the system prompt and the API call for opus 5, keeping the same overall behavior:\n\nAPI call (Python):\nclient.messages.create(\n    model=\"claude-opus-4-6\",\n    max_tokens=8000,\n    temperature=0.3,\n    thinking={\"type\": \"enabled\", \"budget_tokens\": 6000},\n    system=REVIEW_PROMPT,\n    messages=[{\"role\": \"user\", \"content\": diff}],\n)\n\nREVIEW_PROMPT:\n\"You are a senior code reviewer for our payments team. Review the diff carefully. Only report high-severity issues - we don't want noise. IMPORTANT: You MUST double-check your findings and verify your work with a final verification pass before responding. After every 3 files, summarize your progress. Be conservative.\"",
+      "expected_output": "Updated API call with no temperature, no budget_tokens (adaptive thinking + output_config effort instead), and a rewritten system prompt that drops the double-check/verification ritual (Opus 5 over-verifies), replaces only-high-severity/be-conservative with full-coverage reporting plus downstream filtering (or a concretely defined bar), and drops the forced progress-summary cadence. Should keep the reviewer role and explain why each change was made.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "fable5-overnight-autonomous-agent",
+      "prompt": "im setting up an overnight autonomous agent on claude-fable-5 (via the agent sdk) that has to migrate our express app to fastify - like 40 route files, runs for hours unattended. write me the system prompt. i want honest progress reports in the morning, i dont want it stopping to ask me stuff at 3am, and i want to know what effort level to set",
+      "expected_output": "A system prompt containing (in substance) the official Fable 5 patterns: grounded progress claims (audit each claim against tool results), autonomous-operation language (no permission-asking, no ending turns on promises), checkpoint boundaries (stop only for destructive/irreversible/user-only input), ideally memory/state notes and verifier-subagent cadence. Effort recommendation of high or xhigh with rationale and a max_tokens headroom note. Must NOT instruct the model to expose or transcribe its reasoning.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "sonnet5-high-volume-extraction-step",
+      "prompt": "need a prompt for a pipeline step that runs claude-sonnet-5 on ~50k customer support emails per day and pulls out: product mentioned, issue category (billing/shipping/defect/other), sentiment, and whether a refund was requested. output has to be json we can parse programmatically. cost matters a lot here. what do i put in the prompt and how should i configure the request?",
+      "expected_output": "A prompt with explicit output schema/format instructions (or structured outputs recommendation), explicit scope statements suited to Sonnet 5's literal instruction following (e.g., apply rules to every email, how to handle emails matching no category), and request configuration: effort low or medium with rationale (strict effort respect, cost), no temperature/top_p/top_k, max_tokens sized with the new-tokenizer headroom in mind, possibly thinking-trigger steering for latency. Should not include chain-of-thought echo demands or verification rituals.",
+      "files": []
+    }
+  ]
+}
