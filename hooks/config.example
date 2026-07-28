@@ -13,6 +13,7 @@ MIN_CHARS=80
 # below the hook-level timeout registered in hooks.json/settings.json (200),
 # or the harness kills the hook before it can fail open with a message.
 OPT_TIMEOUT=180
-# Optional: override where the claude-5 skill lives (default: ~/.claude/skills/claude-5,
-# seeded by install.sh from the bundled copy; set this to bring your own prompting guide)
+# Optional: swap the bundled claude-5 skill for your own prompting guide.
+# Default resolution: the plugin's own copy (CLAUDE_PLUGIN_ROOT/skills/claude-5);
+# manual installs read the copy install.sh seeds to ~/.claude/skills/claude-5.
 #CLAUDE5_SKILL=/path/to/claude-5

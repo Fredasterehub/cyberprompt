@@ -80,8 +80,10 @@ arc in [LORE.md](skills/cyberprompt/LORE.md).
 Requirements: Claude Code and `jq`, on Linux (macOS needs GNU `timeout` and
 `flock` — `brew install coreutils flock`, then put brew's `gnubin` on your
 `PATH`; Windows isn't supported — the hook just fails open and your prompts
-pass through untouched). The optimizer's own
-[claude-5 prompting skill](skills/claude-5/) ships in the box. Prefer your own prompting guide? Point
+pass through untouched). The [claude-5 prompting skill](skills/claude-5/) the
+forge wields is **bundled**: plugin installs read it straight from the plugin —
+nothing to provide, nothing to seed — and the manual installer copies it to
+`~/.claude/skills/claude-5`. Rather run your own prompting guide? Point
 `CLAUDE5_SKILL=` at a directory with the same shape: `SKILL.md` at the root,
 `references/shared.md`, and per-model files named `references/<model>.md`
 (e.g. `fable-5.md`).
@@ -122,7 +124,7 @@ MODEL=claude-sonnet-5     # which model runs the forge
 EFFORT=medium             # pinned — never silently follows your session effort
 MIN_CHARS=80              # shorter prompts pass through untouched
 OPT_TIMEOUT=180           # forge call timeout, seconds (hook-level cap is 200)
-#CLAUDE5_SKILL=/path/to/yours   # bring your own prompting guide (see Install)
+#CLAUDE5_SKILL=/path/to/yours   # swap the bundled guide for your own (see Install)
 ```
 
 Plugin installs don't seed this file — the defaults above apply until you
