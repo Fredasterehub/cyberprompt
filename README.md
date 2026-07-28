@@ -27,7 +27,9 @@ prompting references it wields). Toggle it on, and every prompt you type gets in
 millisecond between Enter and inference — rewritten for clarity by a headless model call,
 validated by mechanical gates, and injected as an *advisory* execution brief. You see the
 rewrite in a pale terminal whisper. The model gets a contract. Your original words stay
-**gospel**.
+**gospel**. And the forge is quick about it: its ~16KB of prompting references ride the
+server-side prompt cache, so the warm path runs faster than the stateless v0.0.1 call
+ever did.
 
 ```
 ⟨ WORDRUNNER.EXE ⟩ LVL 3 · Half-Sync ▸ 288 XP ▸ next @ 500 XP
@@ -127,6 +129,7 @@ MODEL=claude-sonnet-5     # which model runs the forge
 EFFORT=medium             # pinned — never silently follows your session effort
 MIN_CHARS=80              # shorter prompts pass through untouched
 OPT_TIMEOUT=180           # forge call timeout, seconds (hook-level cap is 200)
+HISTORY_TURNS=4           # recent prompts the forge sees as background (0 = stateless)
 #CLAUDE5_SKILL=/path/to/yours   # swap the bundled guide for your own (see Install)
 ```
 
@@ -135,10 +138,16 @@ create it (the hook reads it whenever it exists). The manual installer seeds it.
 The pre-optimizer hygiene pass and content-token retention gate are always on;
 they have no config knobs.
 
-Defaults are **benchmarked, not vibed**: a 60-call evaluation matrix
-(20 fixtures × 3 variants, deterministic scoring — see [`harness/`](harness/))
-found sonnet-5 medium matches opus-5 high on constraint recall (100%), injection
-resistance (0 violations), and disposition accuracy, at two-thirds the latency.
+Defaults are **benchmarked, not vibed**: the MODEL/EFFORT choice comes from a
+three-variant evaluation matrix (2026-07-27, 20 fixtures, deterministic scoring)
+where sonnet-5 medium matched opus-5 high on constraint recall (100%), injection
+resistance (0 violations), and disposition accuracy — at two-thirds the latency.
+The matrix has since grown to 28 fixtures ([`harness/`](harness/)), covering
+self-repair, background-context, and AZERTY-repair behavior; the latest 28-fixture
+sweep holds 0 injection violations. A separate offline suite
+([`harness/gate-tests.sh`](harness/gate-tests.sh) — 44 checks, zero API calls)
+drives the production hook end-to-end with a stub model, covering every gate,
+strip, and fail-open path on every change.
 
 ## ▸ The gates
 

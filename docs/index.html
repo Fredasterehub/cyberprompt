@@ -252,9 +252,21 @@
       Inferences are quarantined as non-binding.</p></div>
     <div class="card"><h3>Deterministic gates</h3>
       <p>Pure bash+jq review: schema check, quote-substring check, length
-      ceiling — a budget the forge is told up front, then held to anyway.
+      ceiling — a budget the forge is told up front, then held to anyway —
+      and content-token retention: identifiers, paths, flags and versions
+      survive the rewrite, or their drop is quoted in a logged assumption.
       Any failure → your original passes untouched. ICE doesn't
       negotiate.</p></div>
+    <div class="card"><h3>Spoken-intent discipline</h3>
+      <p>Dictation-native. "Port it to Python — non, en fait, Rust" ships
+      Rust and logs the correction; questions stay questions, hedges stay
+      hedges, and an ASR-mangled token is repaired only when exactly one
+      reading exists — raw quote kept, repair on the record.</p></div>
+    <div class="card"><h3>Pre-forge hygiene</h3>
+      <p>Whisper's ghost credits ("Sous-titres réalisés par la communauté…")
+      and stuck-loop repetitions are scrubbed from the forge's copy only —
+      whole lines, exact matches. Your submitted prompt reaches the session
+      untouched, always.</p></div>
     <div class="card"><h3>Injection containment</h3>
       <p>The forge call is non-agentic: <code>--safe-mode --tools ""</code>,
       run from an empty neutral dir so nothing of your repo — cwd, git log —
@@ -293,13 +305,15 @@
 
 <section class="wrap gates">
   <h2>The gates</h2>
-  <pre><span class="g">schema valid?</span> ──▸ <span class="g">source_quotes verbatim in original?</span> ──▸ <span class="g">length ≤ ceiling?</span>
-     │                        │                              │
-     ▼ <span class="f">fail</span>                   ▼ <span class="f">fail</span>                         ▼ <span class="f">fail</span>
+  <pre><span class="g">schema valid?</span> ─▸ <span class="g">source_quotes verbatim?</span> ─▸ <span class="g">length ≤ ceiling?</span> ─▸ <span class="g">tokens retained/accounted?</span>
+     │                   │                        │                     │
+     ▼ <span class="f">fail</span>              ▼ <span class="f">fail</span>                   ▼ <span class="f">fail</span>                ▼ <span class="f">fail</span>
           <span class="s">ORIGINAL PASSES THROUGH UNCHANGED — logged, flagged, fail-open</span></pre>
   <p>The ceiling scales with your original — 2×length + 1500, capped at 9000 —
   and the forge is told the budget up front. It tightens to fit, or passes
-  through. Nobody meets the ICE by surprise.</p>
+  through. Nobody meets the ICE by surprise. The fourth gate anchors your
+  identifiers, paths and flags: they survive the rewrite verbatim, or the
+  forge names the drop in an assumption — silent loss never ships.</p>
 </section>
 
 <section class="wrap install" id="install">
@@ -313,8 +327,9 @@
   <code>install.sh</code> instead. Linux out of the box; macOS wants GNU
   <code>coreutils</code> + <code>flock</code> on <code>PATH</code>. Restart once
   after install — then the sentinel toggles live, per prompt, no restart.
-  Defaults are benchmarked, not vibed: a 60-call evaluation matrix ships in
-  <code>harness/</code>.</p>
+  Defaults are benchmarked, not vibed: a 28-fixture × 3-variant evaluation
+  matrix plus a 44-check offline gate suite (stub model, zero API calls) ship
+  in <code>harness/</code>.</p>
 </section>
 
 <section class="wrap lore">
