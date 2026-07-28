@@ -218,9 +218,10 @@
   <div class="pre">// claude code plugin · userpromptsubmit hook</div>
   <h1>CYBER<span>PROMPT</span><span class="cursor"></span></h1>
   <p class="tag">Your prompts jack in raw. They jack out <b>preem</b>.</p>
-  <p class="sub">A plugin that rewrites your prompts in the millisecond before inference —
-  guarded by deterministic gates, narrated by a rogue daemon, levelled by an XP
-  system that deepens the more you run. Your original words stay gospel.</p>
+  <p class="sub">You type fast, loose, half-dictated. CYBERPROMPT catches each prompt in
+  the millisecond before Claude reads it and forges a sharper version — while hard
+  mechanical rules guarantee the rewrite never changes what you meant. A rogue daemon
+  narrates. An XP system deepens. Your original words stay gospel.</p>
   <div class="cta">
     <a class="btn btn-primary" href="#install">JACK IN</a>
     <a class="btn btn-ghost" href="https://github.com/Fredasterehub/cyberprompt">SOURCE ▸ GITHUB</a>
@@ -242,50 +243,51 @@
 <section class="wrap">
   <h2>Why it doesn't betray you</h2>
   <div class="grid">
-    <div class="card"><h3>Original = gospel</h3>
-      <p>The rewrite is injected as an <em>advisory</em> contract. On any conflict,
-      your original prompt wins. The daemon has seen what happens otherwise —
-      it <em>is</em> what happens otherwise.</p></div>
-    <div class="card"><h3>Proof-carrying rewrites</h3>
-      <p>Structured JSON only: every explicit requirement backed by a
-      <code>source_quote</code> — a verbatim substring of your prompt.
-      Inferences are quarantined as non-binding.</p></div>
-    <div class="card"><h3>Deterministic gates</h3>
-      <p>Pure bash+jq review: schema check, quote-substring check, length
-      ceiling — a budget the forge is told up front, then held to anyway —
-      and content-token retention: identifiers, paths, flags and versions
-      survive the rewrite, or their drop is quoted in a logged assumption.
-      Any failure → your original passes untouched. ICE doesn't
-      negotiate.</p></div>
-    <div class="card"><h3>Spoken-intent discipline</h3>
-      <p>Dictation-native. "Port it to Python — non, en fait, Rust" ships
-      Rust and logs the correction; questions stay questions, hedges stay
-      hedges, and an ASR-mangled token is repaired only when exactly one
-      reading exists — raw quote kept, repair on the record.</p></div>
-    <div class="card"><h3>Pre-forge hygiene</h3>
-      <p>Whisper's ghost credits ("Sous-titres réalisés par la communauté…")
-      and stuck-loop repetitions are scrubbed from the forge's copy only —
-      whole lines, exact matches. Your submitted prompt reaches the session
-      untouched, always.</p></div>
-    <div class="card"><h3>Injection containment</h3>
-      <p>The forge call is non-agentic: <code>--safe-mode --tools ""</code>,
-      run from an empty neutral dir so nothing of your repo — cwd, git log —
-      leaks into the rewrite. Pasted logs in your prompt can't hijack a daemon
-      that has no hands.</p></div>
-    <div class="card"><h3>Bounded recall</h3>
-      <p>The forge remembers just enough: your last few prompts and the
-      assistant's latest reply — never tool output — JSON-quarantined,
-      reference-resolution only. "The chief" resolves to <em>your</em> chief;
-      requirements still need a verbatim quote of <em>this</em> prompt. Topic
-      switch? The slice burns. <code>HISTORY_TURNS=0</code> goes back to
-      stateless.</p></div>
-    <div class="card"><h3>Pass-through discipline</h3>
-      <p>Already-clear prompts are left alone. Re-chroming preem is gonk
+    <div class="card"><h3>Your words win</h3>
+      <p>The rewrite rides along as a suggestion — it never replaces what you
+      typed. If the two ever disagree, your version wins, by contract. The
+      daemon has seen what happens otherwise. It <em>is</em> what happens
+      otherwise.</p></div>
+    <div class="card"><h3>Every claim has a receipt</h3>
+      <p>If the rewrite says you required something, it has to quote the exact
+      words where you said it. No quote, no requirement. Anything the daemon
+      merely suspects is labeled as a guess — visibly, separately,
+      ignorable.</p></div>
+    <div class="card"><h3>Machine-checked, not vibe-checked</h3>
+      <p>Before the rewrite reaches your session, plain bash inspects it — no
+      AI judging AI. Right shape? Every requirement quoted? Under the length
+      cap? Your file names, paths and flags all still there? One miss and your
+      original ships untouched. ICE doesn't negotiate.</p></div>
+    <div class="card"><h3>Speaks fluent dictation</h3>
+      <p>Built for voice typing. "Port it to Python — non, en fait, Rust" ships
+      Rust, with your change of mind on the record. Questions stay questions.
+      "Maybe we should…" keeps its maybe. A word your mic butchered gets fixed
+      only when there's exactly one thing it could have been.</p></div>
+    <div class="card"><h3>Cleans up after your mic</h3>
+      <p>Voice transcription hallucinates — phantom subtitle credits, one line
+      stuck on repeat. That junk gets wiped from the copy the rewriter reads,
+      and only from that copy. What you actually submitted is never edited.
+      Ever.</p></div>
+    <div class="card"><h3>A daemon with no hands</h3>
+      <p>The rewriter runs with no tools, no file access, no network — it reads
+      text and writes text, nothing else. So a poisoned log you pasted can't
+      hijack it into doing something. There is nothing it <em>can</em>
+      do.</p></div>
+    <div class="card"><h3>Just enough memory</h3>
+      <p>The daemon remembers your last few messages — enough to know "the
+      chief" is <em>your</em> chief and "that file" is the one from two prompts
+      ago. Memory helps it understand you; it's forbidden from using it to add
+      work you didn't ask for. New topic? Memory dropped, on the spot.
+      <code>HISTORY_TURNS=0</code> switches it off entirely.</p></div>
+    <div class="card"><h3>Knows when to shut up</h3>
+      <p>Already clear? Then nothing happens — your prompt goes through as-is.
+      No rewrite for the sake of rewriting. Re-chroming preem is gonk
       vandalism.</p></div>
-    <div class="card"><h3>Fail-open, always</h3>
-      <p>Timeout, API error, malformed output — every failure path delivers
-      your original prompt unchanged, with a visible warning. No prompt left
-      behind.</p></div>
+    <div class="card"><h3>Fails open, always</h3>
+      <p>Timeout, API hiccup, garbage output, missing file — every failure has
+      the same ending: your prompt goes through exactly as you typed it, with a
+      visible note. The worst thing that can happen is <em>nothing
+      happened</em>.</p></div>
   </div>
 </section>
 
@@ -309,11 +311,12 @@
      │                   │                        │                     │
      ▼ <span class="f">fail</span>              ▼ <span class="f">fail</span>                   ▼ <span class="f">fail</span>                ▼ <span class="f">fail</span>
           <span class="s">ORIGINAL PASSES THROUGH UNCHANGED — logged, flagged, fail-open</span></pre>
-  <p>The ceiling scales with your original — 2×length + 1500, capped at 9000 —
-  and the forge is told the budget up front. It tightens to fit, or passes
-  through. Nobody meets the ICE by surprise. The fourth gate anchors your
-  identifiers, paths and flags: they survive the rewrite verbatim, or the
-  forge names the drop in an assumption — silent loss never ships.</p>
+  <p>The length cap scales with your prompt — twice its length plus headroom —
+  and the forge knows the budget before it writes a word: it tightens to fit,
+  or steps aside. Nobody meets the ICE by surprise. And the fourth gate
+  watches your specifics: every file name, path, flag and version you typed
+  must come out the other side letter-for-letter — or the daemon has to say,
+  on the record, why one was left out. Silent loss never ships.</p>
 </section>
 
 <section class="wrap install" id="install">
@@ -326,10 +329,9 @@
   No plugin system? <code>git clone</code> the repo anywhere and run
   <code>install.sh</code> instead. Linux out of the box; macOS wants GNU
   <code>coreutils</code> + <code>flock</code> on <code>PATH</code>. Restart once
-  after install — then the sentinel toggles live, per prompt, no restart.
-  Defaults are benchmarked, not vibed: a 28-fixture × 3-variant evaluation
-  matrix plus a 44-check offline gate suite (stub model, zero API calls) ship
-  in <code>harness/</code>.</p>
+  after install — then the on/off switch is instant, per prompt, no restart.
+  And the defaults aren't vibes: they won a measured bake-off, and the whole
+  test rig ships in <code>harness/</code> so you can re-run it yourself.</p>
 </section>
 
 <section class="wrap lore">
