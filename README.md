@@ -48,9 +48,10 @@ So the architecture is paranoid by design:
 |---|---|
 | **Original is authoritative** | The rewrite is injected as an *advisory* contract: on any conflict, your original prompt wins. Stated in-band, enforced by framing. |
 | **Proof-carrying rewrites** | The optimizer must return structured JSON: explicit requirements each backed by a **verbatim quote** of your prompt, inferences quarantined as non-binding. |
-| **Deterministic gates** | Pure bash+jq validation — schema check, source-quote substring check, non-empty rewrite, length ceiling. Any failure → your original passes untouched. |
+| **Deterministic gates** | Pure bash+jq validation — schema check, source-quote substring check, non-empty rewrite, length ceiling (a budget the forge is told up front, then held to anyway). Any failure → your original passes untouched. |
 | **`pass_through` discipline** | Already-clear prompts are left alone. Re-chroming preem is gonk vandalism. |
 | **Injection containment** | The optimizer call is non-agentic: `--safe-mode --tools "" --strict-mcp-config`. Pasted logs in your prompt can't hijack a daemon that has no hands. |
+| **Context quarantine** | Claude Code injects your cwd and recent git commits into headless calls even tool-less — so the forge runs from an empty, git-pinned neutral dir. The rewrite derives from your words alone; nothing about your repo leaks in. |
 | **Fail-open, always** | Timeout, API error, malformed output, missing files — every failure path delivers your original prompt unchanged, with a visible warning. |
 
 ## ▸ The XP system
@@ -120,6 +121,7 @@ way — the sentinel is checked per prompt.
 MODEL=claude-sonnet-5     # which model runs the forge
 EFFORT=medium             # pinned — never silently follows your session effort
 MIN_CHARS=80              # shorter prompts pass through untouched
+OPT_TIMEOUT=180           # forge call timeout, seconds (hook-level cap is 200)
 #CLAUDE5_SKILL=/path/to/yours   # bring your own prompting guide (see Install)
 ```
 
@@ -142,6 +144,10 @@ schema valid? ──▸ source_quotes verbatim in original? ──▸ length ≤
      ▼ fail                   ▼ fail                           ▼ fail
               ORIGINAL PASSES THROUGH UNCHANGED (logged, flagged)
 ```
+
+The ceiling scales with your original — 2×length + 1500 characters, capped at
+9000 — and the forge is told the budget up front: it tightens to fit or passes
+through, instead of meeting the ICE by surprise.
 
 Everything is auditable: `~/.claude/cyberprompt/log.jsonl` records every
 original/optimized pair with disposition, duration, and gate verdicts.

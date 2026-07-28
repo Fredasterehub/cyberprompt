@@ -173,6 +173,7 @@
     padding:1.3rem 1.4rem; overflow-x:auto; font-size:.8rem; line-height:1.8; color:var(--ink-dim);
   }
   .gates .g{ color:var(--primary) } .gates .f{ color:var(--accent) } .gates .s{ color:var(--primary) }
+  .gates p{ color:var(--ink-dim); font-size:.85rem; margin-top:1rem; max-width:38rem }
 
   /* install */
   .install pre{
@@ -251,11 +252,14 @@
       Inferences are quarantined as non-binding.</p></div>
     <div class="card"><h3>Deterministic gates</h3>
       <p>Pure bash+jq review: schema check, quote-substring check, length
-      ceiling. Any failure → your original passes untouched. ICE doesn't
+      ceiling — a budget the forge is told up front, then held to anyway.
+      Any failure → your original passes untouched. ICE doesn't
       negotiate.</p></div>
     <div class="card"><h3>Injection containment</h3>
-      <p>The forge call is non-agentic: <code>--safe-mode --tools ""</code>.
-      Pasted logs in your prompt can't hijack a daemon that has no hands.</p></div>
+      <p>The forge call is non-agentic: <code>--safe-mode --tools ""</code>,
+      run from an empty neutral dir so nothing of your repo — cwd, git log —
+      leaks into the rewrite. Pasted logs in your prompt can't hijack a daemon
+      that has no hands.</p></div>
     <div class="card"><h3>Pass-through discipline</h3>
       <p>Already-clear prompts are left alone. Re-chroming preem is gonk
       vandalism.</p></div>
@@ -286,6 +290,9 @@
      │                        │                              │
      ▼ <span class="f">fail</span>                   ▼ <span class="f">fail</span>                         ▼ <span class="f">fail</span>
           <span class="s">ORIGINAL PASSES THROUGH UNCHANGED — logged, flagged, fail-open</span></pre>
+  <p>The ceiling scales with your original — 2×length + 1500, capped at 9000 —
+  and the forge is told the budget up front. It tightens to fit, or passes
+  through. Nobody meets the ICE by surprise.</p>
 </section>
 
 <section class="wrap install" id="install">
