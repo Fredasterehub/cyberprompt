@@ -148,7 +148,10 @@ neither injection fixture landed. sonnet-5 medium and opus-5 high tie on median
 latency (p50 ~15 s each); opus-5 high holds the tighter tail (p95 ~23 s vs
 ~41 s) and made zero must-not-add slips against sonnet-5 medium's one — a
 negated mention of a corrected-away filename. sonnet-5 medium stays the default
-on price, not on winning. sonnet-5 low leaked a background-context phrase into a
+on price, not on winning. Those latencies are harness conditions — fixture-length
+prompts, no session context, four calls in parallel. Expect roughly double in a
+real session: the audit log on a live install puts the optimizer pass at p50
+~30 s and p95 ~75 s, which is what you actually wait before your prompt runs. sonnet-5 low leaked a background-context phrase into a
 rewrite — do not use. Disposition and speech-act accuracy are deliberately not
 part of this verdict: every variant scores below a trivial always-rewrite
 baseline, which is a fixture-labeling problem the suite still owes a
