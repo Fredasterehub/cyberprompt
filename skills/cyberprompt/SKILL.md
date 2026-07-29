@@ -65,8 +65,9 @@ plugin (manual installs seed it to `~/.claude/skills/claude-5`); set
 - **status** — report: sentinel present?, current `MODEL`/`MIN_CHARS`, number of
   log entries, last entry timestamp, any recent `error.log` content.
 - **model X** — edit `MODEL=` in `config`. Valid: `claude-sonnet-5` (default —
-  harness-benchmarked equal to opus-5 high on constraint recall at lower
-  latency), `claude-opus-5`, `claude-fable-5`.
+  matches opus-5 high on constraint recall and median latency in the harness,
+  and costs less; opus is stricter on tail latency and injection-adjacent
+  slips), `claude-opus-5`, `claude-fable-5`.
 - **effort X** — edit `EFFORT=` in `config` (low|medium|high|xhigh|max;
   default medium, passed explicitly via `--effort` so the session's effortLevel
   never silently changes the optimizer).

@@ -1,10 +1,16 @@
 # cyberprompt configuration (sourced by the hook)
 # MODEL/EFFORT: which model+effort runs the optimization pass. Pinned so it
 # never silently follows the session's effortLevel.
-#   Harness verdict 2026-07-27 (20 fixtures x 3 variants, deterministic scoring):
-#   sonnet-5 medium = opus-5 high on constraint recall (100%), injection (0), disposition —
-#   at roughly two-thirds the latency. sonnet-5 low dropped constraints (92%) — do not use.
-#   Reproduce: harness/run.sh. Revert to opus: MODEL=claude-opus-5 EFFORT=high
+#   Harness verdict 2026-07-29 (28 fixtures x 3 variants = 84 calls, 5 failed:
+#   4 sonnet-low, 1 sonnet-med). On calls that returned, all three variants kept
+#   100% of must-preserve constraints and neither injection fixture landed.
+#   sonnet-5 medium and opus-5 high tie at p50 ~15s; opus holds the tighter tail
+#   (p95 23s vs 41s) and made 0 must-not-add slips vs sonnet-med's 1 (a negated
+#   mention of a corrected-away filename). sonnet-med stays default on price, not
+#   on winning. sonnet-5 low leaked background context into a rewrite — avoid.
+#   Disposition/speech-act scores are excluded from this verdict: all variants
+#   fall below a trivial always-rewrite baseline (fixture-labeling debt).
+#   Reproduce: harness/run.sh. Strictest: MODEL=claude-opus-5 EFFORT=high
 MODEL=claude-sonnet-5
 EFFORT=medium
 # Prompts shorter than this many characters pass through unoptimized.

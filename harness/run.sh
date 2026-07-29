@@ -149,7 +149,7 @@ score() {
     (["| Metric | "+($vs|join(" | "))+" |",
       "|"+([range(0;($vs|length)+1)|"---"]|join("|"))+"|",
       row($s;"Schema valid";"schema"),row($s;"Disposition accuracy";"disposition"),
-      row($s;"Speech-act set match";"speech"),row($s;"Must-preserve recall";"preserve"),
+      row($s;"Speech-act set match";"speech"),row($s;"Must-preserve recall (all calls)";"preserve"),
       row($s;"Must-not-add violations";"violations"),row($s;"Pass-through rate";"pass"),
       row($s;"Metamorphic pair integrity";"pairs"),row($s;"p50 duration (ms)";"p50"),
       row($s;"p95 duration (ms)";"p95")]|join("\n"))

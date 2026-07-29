@@ -138,13 +138,21 @@ create it (the hook reads it whenever it exists). The manual installer seeds it.
 The pre-optimizer hygiene pass and content-token retention gate are always on;
 they have no config knobs.
 
-Defaults are **benchmarked, not vibed**: the MODEL/EFFORT choice comes from a
-three-variant evaluation matrix (2026-07-27, 20 fixtures, deterministic scoring)
-where sonnet-5 medium matched opus-5 high on constraint recall (100%), injection
-resistance (0 violations), and disposition accuracy — at two-thirds the latency.
-The matrix has since grown to 28 fixtures ([`harness/`](harness/)), covering
-self-repair, background-context, and AZERTY-repair behavior; the latest 28-fixture
-sweep holds 0 injection violations. A separate offline suite
+Defaults are **benchmarked, not vibed**: the MODEL/EFFORT choice is re-verified
+on a three-variant evaluation matrix ([`harness/`](harness/) — 28 fixtures
+covering self-repair, background-context and AZERTY-repair behavior, of which
+2 are prompt-injection scenarios). Latest full sweep 2026-07-29, 84 calls, 5 of
+them failing outright (4 sonnet-5 low, 1 sonnet-5 medium). On the calls that
+returned, all three variants preserved 100% of must-preserve constraints and
+neither injection fixture landed. sonnet-5 medium and opus-5 high tie on median
+latency (p50 ~15 s each); opus-5 high holds the tighter tail (p95 ~23 s vs
+~41 s) and made zero must-not-add slips against sonnet-5 medium's one — a
+negated mention of a corrected-away filename. sonnet-5 medium stays the default
+on price, not on winning. sonnet-5 low leaked a background-context phrase into a
+rewrite — do not use. Disposition and speech-act accuracy are deliberately not
+part of this verdict: every variant scores below a trivial always-rewrite
+baseline, which is a fixture-labeling problem the suite still owes a
+recalibration. A separate offline suite
 ([`harness/gate-tests.sh`](harness/gate-tests.sh) — 44 checks, zero API calls)
 drives the production hook end-to-end with a stub model, covering every gate,
 strip, and fail-open path on every change.
