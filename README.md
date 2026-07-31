@@ -74,7 +74,7 @@ So the architecture is paranoid by design:
 | **No invented caution** | The optimizer may never add confirm-first, ask-if-unclear, or avoid-irreversible-actions language you didn't write. How much risk to take is your call, already made: "then push it" stays "then push it". |
 | **Injection containment** | Both optimizer calls are non-agentic. Claude runs with `--safe-mode --tools "" --strict-mcp-config`; Codex runs ephemerally in a read-only sandbox with user config, rules, web, apps, shell, computer use, image generation, and multi-agent features disabled. Pasted logs can't hijack a daemon that has no hands. |
 | **Context quarantine** | The forge runs from an empty, git-pinned neutral dir, not your project. Claude's injected cwd/git context is displaced; Codex ignores user config and repo rules for the nested call. Nothing about your repo becomes an optimizer requirement. |
-| **Bounded recall** | The forge sees a research-sized slice of your session — your last few prompts plus the assistant's latest reply (never tool output), JSON-quarantined — so "the chief" resolves to *your* chief. Background may resolve references, never add requirements: those still need a verbatim quote of your prompt, and a topic switch discards the slice entirely. `HISTORY_TURNS=0` restores the stateless forge. |
+| **Bounded recall** | The forge sees a research-sized slice of your session — your last few prompts plus the assistant's latest reply (never tool output), JSON-quarantined — so "the chief" resolves to *your* chief. Background may resolve references, never add requirements — those still need a verbatim quote of your prompt (mechanically gated) — and the forge is instructed to discard the slice on a topic switch. `HISTORY_TURNS=0` restores the stateless forge. |
 | **Fail-open, always** | Timeout, API error, malformed output, missing files — every failure path delivers your original prompt unchanged, with a visible warning. |
 
 ## ▸ The XP system
@@ -100,7 +100,9 @@ arc in [LORE.md](skills/cyberprompt/LORE.md).
 
 ## ▸ Install
 
-Both builds require modern Bash, `jq`, `git`, GNU `timeout`, and `flock`. Linux
+Both builds require modern Bash, `jq`, GNU `timeout`, and `flock`; `git` is
+used to pin the neutral forge directory (without it the context quarantine
+degrades rather than blocking — install it anyway). Linux
 is the supported platform. On macOS, install modern Bash plus the GNU tools
 (`brew install bash coreutils flock`) and ensure Homebrew's `bash` and
 `coreutils` `gnubin` precede the system versions on `PATH`. Windows is not
@@ -167,7 +169,9 @@ one prompt.
 
 ```bash
 MODEL=gpt-5.6-sol         # the only supported forge model in this release
-EFFORT=low                # pinned — never silently follows session effort
+EFFORT=low                # pinned — never silently follows session effort.
+                          # low/medium are the release-tested settings; higher
+                          # tiers are accepted but unmeasured on this harness
 MIN_CHARS=80              # shorter prompts pass through untouched
 OPT_TIMEOUT=180           # forge timeout, seconds (hook-level cap is 200)
 HISTORY_TURNS=4           # recent turns used only to resolve references (0 = stateless)
@@ -195,8 +199,10 @@ must-preserve recall and tool isolation, with zero must-not-add violations.
 Low beat medium on normalized speech-act exactness (66.7% vs 50%), median
 latency (7.947 s vs 9.170 s), and total output tokens (1,472 vs 1,682).
 Medium had the tighter maximum latency in this small sample (11.506 s vs
-12.135 s). That bounded evidence keeps `low` as the default; run
-`./harness/run-codex.sh --smoke` on your own workload before changing it. Two
+12.135 s). That bounded evidence keeps `low` as the default. `--smoke` replays the same
+fixed six fixtures to reproduce these numbers; to judge your own workload, add
+representative fixtures to [`harness/fixtures.json`](harness/fixtures.json) and
+run `./harness/run-codex.sh` without `--smoke` before changing anything. Two
 legacy disposition expectations score as misses for both variants because they
 expect a rewrite where the current closed-warrant contract deliberately passes
 an already self-contained prompt through unchanged.
@@ -361,8 +367,13 @@ through, instead of meeting the ICE by surprise.
 The advisory-fit gate is a ladder rather than a cliff: an advisory that would
 exceed CYBERPROMPT's 9700-byte application budget is re-rendered without the
 execution brief, with a note saying so on both sides of the glass; only if the
-constraints alone still overflow does it fail open. The host may apply its own
-lower spill threshold too. Every log line records `advisory_chars`.
+constraints alone still overflow does it fail open. Host ceilings differ: Claude
+Code applies a fixed 10,000-unit platform cap, while on Codex this bundle
+declares a 5000-token `additionalContextLimit` in `hooks.json` — deliberately
+above the host's 2500-token default, because a 9700-byte advisory can exceed
+2500 tokens and would otherwise be silently spilled to a file. The byte gate
+always decides first, so the raised allowance admits nothing the ladder didn't
+already approve. Every log line records `advisory_chars`.
 
 The retention gate anchors flags, paths, snake/camel/Pascal identifiers,
 version-shaped tokens, and dotted filenames from the sanitized optimizer input.

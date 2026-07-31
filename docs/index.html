@@ -287,10 +287,11 @@
       and only from that copy. What you actually submitted is never edited.
       Ever.</p></div>
     <div class="card"><h3>A daemon with no hands</h3>
-      <p>The rewriter gets no browser, web, shell or file tools — it reads text
-      and writes text. Its isolated Codex call still uses the network to reach
-      OpenAI. A poisoned log you pasted cannot turn it into an operator because
-      there is nothing else it <em>can</em> do.</p></div>
+      <p>The rewriter gets no browser, no web search, no shell — and on Codex
+      it runs in a read-only sandbox where any tool activity at all voids the
+      run. Its isolated call still uses the network to reach the model's API,
+      nothing else. A poisoned log you pasted cannot turn it into an operator
+      because there is nothing else it <em>can</em> do.</p></div>
     <div class="card"><h3>Just enough memory</h3>
       <p>The daemon remembers your last few messages — enough to know "the
       chief" is <em>your</em> chief and "that file" is the one from two prompts
