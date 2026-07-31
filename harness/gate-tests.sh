@@ -115,6 +115,8 @@ expect_contains "$OUT" "hookSpecificOutput" "rewrite-additional-context"
 expect_contains "$OUT" "CYBERPROMPT ADVISORY" "rewrite-advisory-header"
 expect_contains "$(tail -1 "$STATE/log.jsonl")" '"disposition":"rewrite"' "rewrite-logged"
 expect_contains "$(tail -1 "$STATE/log.jsonl")" '"context_chars":' "rewrite-context-chars-field"
+expect_contains "$(tail -1 "$STATE/log.jsonl")" '"speech_acts":["do the thing"]' "log-speech-acts"
+expect_contains "$(tail -1 "$STATE/log.jsonl")" '"source_quote":"sans redémarrer la base"' "log-explicit-reqs"
 
 ### 11. pass_through path
 fresh_home

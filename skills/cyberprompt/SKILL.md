@@ -38,7 +38,7 @@ State directory: `~/.claude/cyberprompt/`
 | `enabled` | Sentinel — exists = hook active. No restart needed either way. |
 | `config` | `MODEL=`, `EFFORT=` (pinned reasoning effort, default medium), `MIN_CHARS=`, `OPT_TIMEOUT=` (optimizer call timeout in seconds, default 180 — keep below the 200 s hook-level timeout), `HISTORY_TURNS=` (operator prompts shown as background context, default 4, `0` = stateless), optional `CLAUDE5_SKILL=` override. Pre-optimizer strips and content retention are always on and have no config entries. |
 | `instruction.txt` | Optimizer system instruction template |
-| `log.jsonl` | Audit trail: `{ts, session, optimizer_model, target_model, original, optimized, disposition, duration_ms, context_chars, assumptions, gate_failure}` |
+| `log.jsonl` | Audit trail: `{ts, session, optimizer_model, target_model, original, optimized, disposition, rewrite_warrant, duration_ms, context_chars, speech_acts, explicit_requirements, assumptions, gate_failure}` |
 | `error.log` | stderr of failed `claude -p` calls |
 
 ## Install (first time for a user)
@@ -76,7 +76,7 @@ plugin (manual installs seed it to `~/.claude/skills/claude-5`); set
   50/125/250/500/1000/2000/4000). Backstory in `LORE.md` next to this file —
   read it aloud on request.
 - **log [n]** — show the last n pairs:
-  `tail -n 5 ~/.claude/cyberprompt/log.jsonl | jq -r '"[\(.ts)] \(.optimizer_model)→\(.target_model)\nORIGINAL: \(.original)\nOPTIMIZED: \(.optimized)\n"'`
+  `tail -n 5 ~/.claude/cyberprompt/log.jsonl | jq -r '"[\(.ts)] \(.optimizer_model)→\(.target_model) \(.disposition)/\(.rewrite_warrant // "-")\nACTS: \(.speech_acts // [] | join("; "))\nORIGINAL: \(.original)\nOPTIMIZED: \(.optimized)\n"'`
 
 ## Behavior notes
 

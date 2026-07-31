@@ -111,20 +111,31 @@ esac
 [ "${#PROMPT}" -lt "$MIN_CHARS" ] && exit 0
 
 log_event() {
-  local line
+  # TARGET and HISTORY are first assigned far below this function's earliest
+  # caller (the bypass path): under set -u a bare expansion would kill the
+  # command substitution and the "|| return 0" would silently swallow the
+  # whole log line. Default them here instead.
+  local line hist="${HISTORY:-}"
   line=$(jq -cn --arg ts "$(date -Is)" \
          --arg sid "$(jq -r '.session_id // ""' <<<"$INPUT")" \
-         --arg model "$MODEL" --arg target "$TARGET" \
+         --arg model "$MODEL" --arg target "${TARGET:-}" \
          --arg original "$RAW_PROMPT" --arg optimized "${OPTIMIZED:-}" \
          --arg disposition "${DISPOSITION:-}" \
+         --arg warrant "${WARRANT:-}" \
          --argjson duration "${DURATION_MS:-0}" \
-         --argjson ctx "${#HISTORY}" \
+         --argjson ctx "${#hist}" \
+         --argjson speech "${SPEECH_ACTS:-[]}" \
+         --argjson reqs "${EXPLICIT_REQS:-[]}" \
          --argjson assumptions "${ASSUMPTIONS:-[]}" \
          --arg gate "${GATE_FAILURE:-}" \
-    '{ts:$ts, session:$sid, optimizer_model:$model, target_model:$target,
+    '{ts:$ts, session:$sid, optimizer_model:$model,
+      target_model:(if $target == "" then null else $target end),
       original:$original, optimized:$optimized,
       disposition:(if $disposition == "" then null else $disposition end),
-      duration_ms:$duration, context_chars:$ctx, assumptions:$assumptions,
+      rewrite_warrant:(if $warrant == "" then null else $warrant end),
+      duration_ms:$duration, context_chars:$ctx,
+      speech_acts:$speech, explicit_requirements:$reqs,
+      assumptions:$assumptions,
       gate_failure:(if $gate == "" then null else $gate end)}') || return 0
   (
     umask 077
@@ -495,10 +506,16 @@ if [ "$rc" -ne 0 ]; then
 fi
 
 STRUCTURED=$(jq -c '.structured_output | select(type == "object")' <<<"$RESPONSE" 2>/dev/null)
-# Persisted with every log line so accounted anchor drops and repair notes stay
-# auditable after the advisory scrolls away (the instruction promises this).
+# Persisted with every log line so accounted anchor drops, repair notes, and
+# the verbatim source-quote guarantee stay auditable after the advisory
+# scrolls away (the instruction promises this; before v0.0.4 only assumptions
+# were logged and the guarantee had no evidence trail).
 ASSUMPTIONS=$(jq -c '.assumptions // []' <<<"$STRUCTURED" 2>/dev/null) || ASSUMPTIONS='[]'
 [ -n "$ASSUMPTIONS" ] || ASSUMPTIONS='[]'
+SPEECH_ACTS=$(jq -c '.speech_acts // []' <<<"$STRUCTURED" 2>/dev/null) || SPEECH_ACTS='[]'
+[ -n "$SPEECH_ACTS" ] || SPEECH_ACTS='[]'
+EXPLICIT_REQS=$(jq -c '.explicit_requirements // []' <<<"$STRUCTURED" 2>/dev/null) || EXPLICIT_REQS='[]'
+[ -n "$EXPLICIT_REQS" ] || EXPLICIT_REQS='[]'
 gate_output "$PROMPT" <<<"$STRUCTURED"
 gate_rc=$?
 if [ "$gate_rc" -eq 2 ]; then
