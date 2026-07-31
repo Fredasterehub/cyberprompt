@@ -3,6 +3,7 @@
   "additionalProperties": false,
   "required": [
     "disposition",
+    "rewrite_warrant",
     "speech_acts",
     "explicit_requirements",
     "assumptions",
@@ -14,6 +15,18 @@
       "enum": [
         "rewrite",
         "pass_through"
+      ]
+    },
+    "rewrite_warrant": {
+      "type": "string",
+      "description": "The single defect this rewrite repairs. Must be \"none\" when disposition is \"pass_through\"; must NOT be \"none\" when disposition is \"rewrite\" — a deterministic gate rejects that pair.",
+      "enum": [
+        "referent_bound",
+        "self_correction_discarded",
+        "buried_constraint_hoisted",
+        "dictation_cleanup",
+        "ambiguity_restructured",
+        "none"
       ]
     },
     "speech_acts": {

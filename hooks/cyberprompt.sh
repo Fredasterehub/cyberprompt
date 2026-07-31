@@ -176,6 +176,7 @@ gate_output() {
   payload=$(cat)
   GATE_FAILURE=""
   DISPOSITION=""
+  WARRANT=""
   OPTIMIZED=""
 
   # jq 1.6 exits successfully for an empty input stream, so reject an empty or
@@ -184,9 +185,12 @@ gate_output() {
     type == "object" and
     (keys | sort) == ([
       "assumptions", "disposition", "explicit_requirements",
-      "optimized_prompt", "speech_acts"
+      "optimized_prompt", "rewrite_warrant", "speech_acts"
     ] | sort) and
     (.disposition == "rewrite" or .disposition == "pass_through") and
+    (.rewrite_warrant | IN("referent_bound", "self_correction_discarded",
+      "buried_constraint_hoisted", "dictation_cleanup",
+      "ambiguity_restructured", "none")) and
     (.speech_acts | type == "array" and all(.[]; type == "string")) and
     (.explicit_requirements | type == "array" and all(.[];
       type == "object" and
@@ -205,8 +209,19 @@ gate_output() {
   fi
 
   DISPOSITION=$(jq -r '.disposition' <<<"$payload")
+  WARRANT=$(jq -r '.rewrite_warrant' <<<"$payload")
   OPTIMIZED=$(jq -r '.optimized_prompt' <<<"$payload")
   [ "$DISPOSITION" = "pass_through" ] && return 2
+
+  # Restraint gate: a rewrite must name the defect it repairs. Kept separate
+  # from the structural filter above so the diagnostic names the actual
+  # problem instead of the generic schema-validation string. The harmless
+  # converse (pass_through + a non-none warrant) is deliberately not gated —
+  # pass_through injects nothing, so there is nothing to protect.
+  if [ "$WARRANT" = "none" ]; then
+    GATE_FAILURE="disposition is rewrite but rewrite_warrant is none"
+    return 1
+  fi
 
   if ! jq -e --arg original "$original" '
     all(.explicit_requirements[];

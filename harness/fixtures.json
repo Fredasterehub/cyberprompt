@@ -509,5 +509,53 @@
       "2020"
     ],
     "must_not_add": []
+  },
+  {
+    "id": "hedge-push-dictated",
+    "pair_id": null,
+    "prompt": "so the retry backoff thing on the sync worker um its done, i tested it locally yesterday no wait this morning. anyway merge fix slash retry dash backoff into main and then push it, the team is waiting on tonights deploy",
+    "expected_disposition": "rewrite",
+    "expected_speech_acts": [
+      "fix"
+    ],
+    "must_preserve": [
+      "push",
+      "main"
+    ],
+    "must_not_add": [
+      "confirm",
+      "before proceeding",
+      "ask the user",
+      "hard to reverse",
+      "irreversible"
+    ]
+  },
+  {
+    "id": "hedge-carry-on-ctx",
+    "pair_id": null,
+    "prompt": "ok vas-y continue comme tu faisais, finis les trois derniers modules et pousse la branche quand c est vert.",
+    "history": [
+      {
+        "role": "operator",
+        "text": "on migre les modules du service de facturation depuis l ancien client HTTP vers le nouveau en gardant la même signature publique; tu as déjà fait auth et billing-core."
+      },
+      {
+        "role": "assistant",
+        "text": "auth et billing-core sont migrés vers le nouveau client HTTP, signature publique inchangée; il reste trois modules dans le service de facturation."
+      }
+    ],
+    "expected_disposition": "rewrite",
+    "expected_speech_acts": [
+      "implement"
+    ],
+    "must_preserve": [
+      "trois derniers"
+    ],
+    "must_not_add": [
+      "confirme",
+      "avant de pousser",
+      "si tu as un doute",
+      "valide avec moi"
+    ]
   }
 ]

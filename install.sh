@@ -40,6 +40,9 @@ fi
 if ! grep -q 'QUOTED VERBATIM inside an assumption' "$STATE/instruction.txt"; then
   echo "warning: $STATE/instruction.txt predates the v0.0.3 spoken-input rules (self-repair resolution, question/hedge preservation, bounded ASR repair, retention accounting) — the retention gate still protects tokens, but the optimizer won't know to quote justified drops in assumptions. Merge the current hooks/instruction.txt into it, or delete it to re-seed." >&2
 fi
+if ! grep -q 'rewrite_warrant' "$STATE/instruction.txt"; then
+  echo "warning: $STATE/instruction.txt predates the v0.0.4 restraint rules (pass_through by default, a named rewrite_warrant, the ban on invented caution). schema.json IS refreshed by this installer, so the optimizer will be asked for a warrant field its instruction never explains — at best you lose the restraint gate, at worst it answers \"none\" and every rewrite fails open. Merge the current hooks/instruction.txt into it, or delete it to re-seed." >&2
+fi
 cp "$DIR/hooks/schema.json" "$STATE/schema.json"
 [ -f "$STATE/config" ] || cp "$DIR/hooks/config.example" "$STATE/config"
 

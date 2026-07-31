@@ -110,7 +110,7 @@ score() {
           | any($e.value[]; . as $m | $t | contains($m))))
       | $e.key] | unique | sort;
     def valid($s): ($s|type)=="object" and
-      (($s|keys|sort)==(["assumptions","disposition","explicit_requirements","optimized_prompt","speech_acts"]|sort)) and
+      (($s|keys|sort)==(["assumptions","disposition","explicit_requirements","optimized_prompt","rewrite_warrant","speech_acts"]|sort)) and
       ($s.disposition=="rewrite" or $s.disposition=="pass_through") and
       (($s.speech_acts|type)=="array" and all($s.speech_acts[]; type=="string")) and
       (($s.explicit_requirements|type)=="array" and all($s.explicit_requirements[];

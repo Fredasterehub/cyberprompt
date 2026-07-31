@@ -38,10 +38,16 @@ stub() {
   chmod +x "$H/bin/claude"
 }
 
-# structured <disposition> <optimized> <requirements-json> <assumptions-json>
+# structured <disposition> <optimized> <requirements-json> <assumptions-json> [warrant]
+# Default warrant is a VALID one for rewrites: defaulting to "none" would flip
+# every existing rewrite test into a fail-open and turn the suite unreadable.
 structured() {
-  jq -cn --arg d "$1" --arg o "$2" --argjson r "${3:-[]}" --argjson a "${4:-[]}" \
-    '{structured_output: {disposition: $d, speech_acts: ["do the thing"],
+  local w=${5:-}
+  if [ -z "$w" ]; then
+    if [ "$1" = "rewrite" ]; then w=buried_constraint_hoisted; else w=none; fi
+  fi
+  jq -cn --arg d "$1" --arg o "$2" --argjson r "${3:-[]}" --argjson a "${4:-[]}" --arg w "$w" \
+    '{structured_output: {disposition: $d, rewrite_warrant: $w, speech_acts: ["do the thing"],
       explicit_requirements: $r, assumptions: $a, optimized_prompt: $o}}'
 }
 
@@ -280,6 +286,24 @@ structured rewrite "une petite réécriture" '[]' "$A9800" | stub 0
 OUT=$(run_hook "$(input_json "$BIGA")")
 expect_contains "$OUT" "injection limit" "overflow-tier3-fails-open"
 expect_not_contains "$OUT" "hookSpecificOutput" "overflow-tier3-no-context"
+
+### 26. restraint gate: rewrite must name a warrant, warrant is logged
+fresh_home
+structured rewrite "une réécriture sans justification" '[]' '[]' none | stub 0
+OUT=$(run_hook "$(input_json "$LONG_FR")")
+expect_contains "$OUT" "rewrite_warrant is none" "warrant-none-blocked"
+expect_contains "$OUT" "original prompt passed through unchanged" "warrant-none-fails-open"
+fresh_home
+structured rewrite "Remets la file de jobs en marche sans redémarrer la base." '[]' '[]' referent_bound | stub 0
+run_hook "$(input_json "$LONG_FR")" >/dev/null
+expect_contains "$(tail -1 "$STATE/log.jsonl")" '"rewrite_warrant":"referent_bound"' "warrant-logged"
+fresh_home
+structured rewrite "x" '[]' '[]' made_it_clearer | stub 0
+expect_contains "$(run_hook "$(input_json "$LONG_FR")")" "schema validation" "warrant-unknown-rejected"
+fresh_home
+structured pass_through "$LONG_FR" '[]' '[]' | stub 0
+run_hook "$(input_json "$LONG_FR")" >/dev/null
+expect_contains "$(tail -1 "$STATE/log.jsonl")" '"rewrite_warrant":"none"' "warrant-passthrough-none"
 
 echo
 echo "gate-tests: $PASS passed, $FAIL failed"
