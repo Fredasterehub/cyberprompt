@@ -1,0 +1,20 @@
+{
+  "name": "cyberprompt",
+  "interface": {
+    "displayName": "CYBERPROMPT"
+  },
+  "plugins": [
+    {
+      "name": "cyberprompt",
+      "source": {
+        "source": "local",
+        "path": "./plugins/cyberprompt"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

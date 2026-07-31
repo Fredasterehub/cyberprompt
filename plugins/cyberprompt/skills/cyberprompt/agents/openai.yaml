@@ -1,0 +1,4 @@
+interface:
+  display_name: "CYBERPROMPT"
+  short_description: "Toggle and inspect the prompt forge"
+  default_prompt: "Use $cyberprompt:cyberprompt to turn CYBERPROMPT on."

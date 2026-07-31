@@ -4,12 +4,14 @@
 
 **Your prompts jack in raw. They jack out preem.**
 
-*A Claude Code plugin that rewrites your prompts before the model acts on them —
-guarded by deterministic gates, narrated by a rogue daemon, levelled by an XP system
-that deepens the more you run.*
+*One public repo, two native plugins: Claude Code and Codex CLI. Each rewrites your
+prompts before the model acts on them — guarded by deterministic gates, narrated by
+a rogue daemon, and levelled by an XP system that deepens the more you run.*
 
 [![release](https://img.shields.io/github/v/tag/Fredasterehub/cyberprompt?style=flat-square&labelColor=121212&color=fcee0a&label=release)](https://github.com/Fredasterehub/cyberprompt/tags)
 [![web](https://img.shields.io/badge/web-the_Interstice-ff5e1a?style=flat-square&labelColor=121212)](https://fredasterehub.github.io/cyberprompt/)
+[![codex](https://img.shields.io/badge/Codex_CLI-GPT--5.6_Sol-fcee0a?style=flat-square&labelColor=121212)](#codex-cli)
+[![claude](https://img.shields.io/badge/Claude_Code-Claude_5-ff5e1a?style=flat-square&labelColor=121212)](#claude-code)
 [![shell](https://img.shields.io/badge/built_with-bash+jq-fcee0a?style=flat-square&labelColor=121212)](hooks/cyberprompt.sh)
 [![gates](https://img.shields.io/badge/gates-deterministic-ff5e1a?style=flat-square&labelColor=121212)](#-the-gates)
 [![daemon](https://img.shields.io/badge/daemon-WORDRUNNER.EXE-fcee0a?style=flat-square&labelColor=121212)](skills/cyberprompt/LORE.md)
@@ -21,18 +23,30 @@ that deepens the more you run.*
 
 ## ▸ What is this, choom?
 
-**CYBERPROMPT** is a [Claude Code](https://claude.com/claude-code) plugin: a
-`UserPromptSubmit` hook flanked by two bundled skills (management + the claude-5
-prompting references it wields). Toggle it on, and every prompt you type gets intercepted in the **Interstice** — the
+**CYBERPROMPT** ships native bundles for [Codex CLI](https://developers.openai.com/codex/)
+and [Claude Code](https://claude.com/claude-code). Each bundle pairs a
+`UserPromptSubmit` hook with two skills: one manages the daemon, while the other
+holds model-specific prompting guidance. Toggle it on, and every prompt you type gets intercepted in the **Interstice** — the
 millisecond between Enter and inference — rewritten for clarity by a headless model call,
 validated by mechanical gates, and injected as an *advisory* execution brief. You see the
 rewrite in a pale terminal whisper. The model gets a contract. Your original words stay
 **gospel**. And the forge knows when to hold its tongue: passthrough is the
 presumption, and a rewrite has to name the specific defect it repairs — or say
 nothing at all. When you'd rather it not even look, one word (`skipit`) stands
-it down for that prompt. The warm path is quick about it too: ~16KB of prompting
-references ride the server-side prompt cache, so it runs faster than the
-stateless v0.0.1 call ever did.
+it down for that prompt. On Claude Code, ~16KB of prompting references ride the
+server-side prompt cache. On Codex, the forge gets one compact, release-tested Sol
+contract with every tool disabled. Different jacks, same paranoia.
+
+| Surface | Automatic forge | Bundled skills | Independent state |
+|---|---|---|---|
+| **Codex CLI** | GPT-5.6 Sol, `low` effort | [`$cyberprompt:cyberprompt`](plugins/cyberprompt/skills/cyberprompt/) + [`$cyberprompt:gpt-5-6-sol`](plugins/cyberprompt/skills/gpt-5-6-sol/) | `~/.codex/cyberprompt` (or `$CODEX_HOME/cyberprompt`) |
+| **Claude Code** | Claude Sonnet 5, `medium` effort | [`cyberprompt`](skills/cyberprompt/) + [`claude-5`](skills/claude-5/) | `~/.claude/cyberprompt` |
+
+The automatic part is the plugin hook. A skill by itself can teach a model how to
+write or manage prompts, but it cannot intercept every submitted prompt on either
+host. That distinction matters: seeing `$cyberprompt:cyberprompt` in Codex does **not** mean the
+forge is active; the plugin must be enabled, its command hook trusted, and its
+sentinel present.
 
 ```
 ⟨ WORDRUNNER.EXE ⟩ LVL 3 · Half-Sync ▸ 288 XP ▸ next @ 500 XP
@@ -58,8 +72,8 @@ So the architecture is paranoid by design:
 | **Spoken-intent discipline** | The optimizer distinguishes replacement self-repairs from additions, preserves questions/hedges instead of upgrading them to orders, and may repair only an unambiguous ASR surface error while keeping its raw quote and recording uncertain repairs. |
 | **`pass_through` discipline** | Passthrough is the *presumption*: a rewrite must name the one defect it repairs (a bound referent, a discarded self-correction, a hoisted buried constraint, dictation damage, or a settled ambiguity) in a machine-checked `rewrite_warrant` field — "made it clearer" is not a warrant, and a rewrite claiming none is rejected. Re-chroming preem is gonk vandalism. |
 | **No invented caution** | The optimizer may never add confirm-first, ask-if-unclear, or avoid-irreversible-actions language you didn't write. How much risk to take is your call, already made: "then push it" stays "then push it". |
-| **Injection containment** | The optimizer call is non-agentic: `--safe-mode --tools "" --strict-mcp-config`. Pasted logs in your prompt can't hijack a daemon that has no hands. |
-| **Context quarantine** | Claude Code injects your cwd and recent git commits into headless calls even tool-less — so the forge runs from an empty, git-pinned neutral dir. Nothing about your repo leaks in. |
+| **Injection containment** | Both optimizer calls are non-agentic. Claude runs with `--safe-mode --tools "" --strict-mcp-config`; Codex runs ephemerally in a read-only sandbox with user config, rules, web, apps, shell, computer use, image generation, and multi-agent features disabled. Pasted logs can't hijack a daemon that has no hands. |
+| **Context quarantine** | The forge runs from an empty, git-pinned neutral dir, not your project. Claude's injected cwd/git context is displaced; Codex ignores user config and repo rules for the nested call. Nothing about your repo becomes an optimizer requirement. |
 | **Bounded recall** | The forge sees a research-sized slice of your session — your last few prompts plus the assistant's latest reply (never tool output), JSON-quarantined — so "the chief" resolves to *your* chief. Background may resolve references, never add requirements: those still need a verbatim quote of your prompt, and a topic switch discards the slice entirely. `HISTORY_TURNS=0` restores the stateless forge. |
 | **Fail-open, always** | Timeout, API error, malformed output, missing files — every failure path delivers your original prompt unchanged, with a visible warning. |
 
@@ -86,18 +100,180 @@ arc in [LORE.md](skills/cyberprompt/LORE.md).
 
 ## ▸ Install
 
-Requirements: Claude Code and `jq`, on Linux (macOS needs GNU `timeout` and
-`flock` — `brew install coreutils flock`, then put brew's `gnubin` on your
-`PATH`; Windows isn't supported — the hook just fails open and your prompts
-pass through untouched). The [claude-5 prompting skill](skills/claude-5/) the
-forge wields is **bundled**: plugin installs read it straight from the plugin —
-nothing to provide, nothing to seed — and the manual installer copies it to
+Both builds require modern Bash, `jq`, `git`, GNU `timeout`, and `flock`. Linux
+is the supported platform. On macOS, install modern Bash plus the GNU tools
+(`brew install bash coreutils flock`) and ensure Homebrew's `bash` and
+`coreutils` `gnubin` precede the system versions on `PATH`. Windows is not
+supported; a missing dependency makes the hook fail open and the original
+prompt continues unchanged.
+
+<a id="codex-cli"></a>
+
+### Codex CLI
+
+Requirements: an authenticated Codex CLI with plugin and `UserPromptSubmit`
+hook support. This build targets `codex-cli 0.146.0`; a later compatible build
+must still expose `codex plugin`, `/plugins`, and `/hooks` plus the nested
+`codex exec` flags used by the forge.
+
+#### Plugin (recommended)
+
+```bash
+codex plugin marketplace add Fredasterehub/cyberprompt --ref main
+codex plugin add cyberprompt@cyberprompt
+```
+
+Start a new Codex session after installation; plugin hooks load at session
+start. Open `/hooks`, inspect the bundled `UserPromptSubmit` command, and
+explicitly trust it. Installing or enabling a plugin does **not** auto-trust its
+command hooks.
+
+`/plugins` is the coarse bundle switch: select **CYBERPROMPT** and press Space
+to enable or disable the plugin and its skills. The sentinel is the hot switch
+for the optimizer alone, so skills can stay installed and no session restart is
+needed.
+
+Jack in:
+
+```bash
+CYBERPROMPT_CODEX_STATE="${CODEX_HOME:-$HOME/.codex}/cyberprompt"
+umask 077
+mkdir -p "$CYBERPROMPT_CODEX_STATE"
+chmod 700 "$CYBERPROMPT_CODEX_STATE"
+touch "$CYBERPROMPT_CODEX_STATE/enabled"
+```
+
+Check the hot-switch state:
+
+```bash
+CYBERPROMPT_CODEX_STATE="${CODEX_HOME:-$HOME/.codex}/cyberprompt"
+test -f "$CYBERPROMPT_CODEX_STATE/enabled" && echo on || echo off
+```
+
+Stand down without removing either skill:
+
+```bash
+CYBERPROMPT_CODEX_STATE="${CODEX_HOME:-$HOME/.codex}/cyberprompt"
+rm -f "$CYBERPROMPT_CODEX_STATE/enabled"
+```
+
+Or ask Codex: *"Use `$cyberprompt:cyberprompt` to turn CYBERPROMPT on"*, *"...off"*, or
+*"Use `$cyberprompt:cyberprompt` to show CYBERPROMPT status"*. Status reports the sentinel,
+active model, forge settings, audit count, latest event and recent errors; when
+the host exposes it, it also reports hook trust. `skipit` still bypasses just
+one prompt.
+
+#### Codex config (`${CODEX_HOME:-$HOME/.codex}/cyberprompt/config`)
+
+```bash
+MODEL=gpt-5.6-sol         # the only supported forge model in this release
+EFFORT=low                # pinned — never silently follows session effort
+MIN_CHARS=80              # shorter prompts pass through untouched
+OPT_TIMEOUT=180           # forge timeout, seconds (hook-level cap is 200)
+HISTORY_TURNS=4           # recent turns used only to resolve references (0 = stateless)
+```
+
+Plugin installs do not seed this file; those defaults apply until you create
+it. The Codex hook parses it as data, never sources it as shell. State is wholly
+separate from Claude Code: the toggle, config, `log.jsonl`, `error.log`, neutral
+forge directory, and optional `instruction.txt` override all live beneath the
+Codex state root. Never point it at `~/.claude/cyberprompt`.
+
+Sol `low` is the initial default because prompt normalization is a bounded,
+latency-sensitive transformation and `low` is also Codex CLI's Sol default.
+It is a release choice, not a claim that low always wins: move to `medium` only
+when representative harness cases show a quality gain worth the extra latency.
+The active outer session must also be `gpt-5.6-sol` (or the `gpt-5.6` alias);
+on another model the forge fails open instead of silently optimizing for the
+wrong target.
+
+The [release smoke](harness/codex-eval-20260731.md) compared six fixed fixtures
+at both efforts (12 real calls) with
+[`harness/run-codex.sh`](harness/run-codex.sh). Both variants completed
+6/6 calls with 100% schema validity, source-quote validity, core-gate validity,
+must-preserve recall and tool isolation, with zero must-not-add violations.
+Low beat medium on normalized speech-act exactness (66.7% vs 50%), median
+latency (7.947 s vs 9.170 s), and total output tokens (1,472 vs 1,682).
+Medium had the tighter maximum latency in this small sample (11.506 s vs
+12.135 s). That bounded evidence keeps `low` as the default; run
+`./harness/run-codex.sh --smoke` on your own workload before changing it. Two
+legacy disposition expectations score as misses for both variants because they
+expect a rewrite where the current closed-warrant contract deliberately passes
+an already self-contained prompt through unchanged.
+
+The non-model adapter suite lives at
+[`harness/codex-gate-tests.sh`](harness/codex-gate-tests.sh): 81 deterministic
+checks cover toggles, recursion, sanitization, provenance, JSON framing, strict
+event isolation, transcript filtering, retention, context budgets, dependency
+failure, audit durability and packaging without making an API call.
+
+#### The fresh Sol guide
+
+The Codex bundle contains two deliberately separate skills:
+
+- [`$cyberprompt:cyberprompt`](plugins/cyberprompt/skills/cyberprompt/) manages install,
+  trust, toggles, status, config, logs, XP, bypasses and troubleshooting.
+- [`$cyberprompt:gpt-5-6-sol`](plugins/cyberprompt/skills/gpt-5-6-sol/) writes, reviews,
+  migrates and deploys prompts for Sol. Every invocation refreshes its working
+  context from current official OpenAI documentation, the installed CLI,
+  standards, release notes, maintainers' reference implementations and original
+  research. It supplies an explicit as-of date covering evidence through
+  July 31, 2026 or later, plus a concrete invocation or deployment example. If
+  retrieval is unavailable, it labels the bundled snapshot as an offline
+  fallback.
+
+Fresh browsing updates the skill's **working context**, not the model's training
+data. It is also not placed inside the automatic forge: that nested call is
+intentionally tool-less and uses a compact, release-tested instruction contract.
+Invoke `$cyberprompt:gpt-5-6-sol` when you want current research or a prompt authored for
+Sol; leave the per-submit forge deterministic and contained.
+
+#### Update or uninstall Codex
+
+Update:
+
+```bash
+codex plugin marketplace upgrade cyberprompt
+codex plugin remove cyberprompt@cyberprompt
+codex plugin add cyberprompt@cyberprompt
+```
+
+Uninstall (the second command is optional if you want to keep the marketplace):
+
+```bash
+codex plugin remove cyberprompt@cyberprompt
+codex plugin marketplace remove cyberprompt
+```
+
+Start a new session after reinstalling and re-trust the hook if its command
+definition changed. Uninstalling deliberately leaves
+`${CODEX_HOME:-$HOME/.codex}/cyberprompt` in place so your config and audit log
+survive; delete that narrow state directory manually only if you want them gone.
+
+One current host caveat: Codex may render hook-supplied developer context in the
+transcript. That visible block is host UI, not a second optimizer pass. The hook
+can add advisory context but cannot replace or retract the original user
+message, so `skipit` remains visible too.
+
+Current platform references: [Codex hooks](https://learn.chatgpt.com/docs/hooks),
+[plugin packaging](https://developers.openai.com/plugins/build/plugins),
+[building skills](https://learn.chatgpt.com/docs/build-skills), and
+[GPT-5.6 prompt guidance](https://developers.openai.com/api/docs/guides/prompt-guidance-gpt-5p6.md).
+
+<a id="claude-code"></a>
+
+### Claude Code
+
+Requirements: an authenticated Claude Code installation. The
+[claude-5 prompting skill](skills/claude-5/) the forge wields is **bundled**:
+plugin installs read it straight from the plugin — nothing to provide, nothing
+to seed — and the manual installer copies it to
 `~/.claude/skills/claude-5`. Rather run your own prompting guide? Point
 `CLAUDE5_SKILL=` at a directory with the same shape: `SKILL.md` at the root,
 `references/shared.md`, and per-model files named `references/<model>.md`
 (e.g. `fable-5.md`).
 
-### Plugin (recommended)
+#### Plugin (recommended)
 
 ```
 /plugin marketplace add Fredasterehub/cyberprompt
@@ -110,7 +286,7 @@ skills automatically; updates ride the marketplace. Restart Claude Code once
 after installing (hooks load at session start) — toggling the sentinel never
 needs one.
 
-### Manual (no plugin)
+#### Manual (no plugin)
 
 ```bash
 git clone https://github.com/Fredasterehub/cyberprompt
@@ -126,7 +302,7 @@ settings entry first, or the hook runs twice.
 Disable any time: `rm ~/.claude/cyberprompt/enabled`. No restart needed either
 way — the sentinel is checked per prompt.
 
-### Config (`~/.claude/cyberprompt/config`)
+#### Claude config (`~/.claude/cyberprompt/config`)
 
 ```bash
 MODEL=claude-sonnet-5     # which model runs the forge
@@ -183,10 +359,10 @@ The ceiling scales with your original — 2×length + 1500 characters, capped at
 through, instead of meeting the ICE by surprise.
 
 The advisory-fit gate is a ladder rather than a cliff: an advisory that would
-exceed the platform's 10,000-unit injection cap (which silently swaps the text
-for a spill-file path) is re-rendered without the execution brief, with a note
-saying so on both sides of the glass; only if the constraints alone still
-overflow does it fail open. Every log line records `advisory_chars`.
+exceed CYBERPROMPT's 9700-byte application budget is re-rendered without the
+execution brief, with a note saying so on both sides of the glass; only if the
+constraints alone still overflow does it fail open. The host may apply its own
+lower spill threshold too. Every log line records `advisory_chars`.
 
 The retention gate anchors flags, paths, snake/camel/Pascal identifiers,
 version-shaped tokens, and dotted filenames from the sanitized optimizer input.
@@ -201,14 +377,15 @@ Before the optimizer call, exact known Whisper credit lines are stripped,
 chrome — the WORDRUNNER header and SYNC MILESTONE banners, gutter-prefixed the
 way the terminal pastes them — is dropped, all on its private copy. These are
 whole-line operations: a phrase embedded in a real sentence is untouched. If
-only artifacts or whitespace remain, the optimizer is skipped. Claude Code
-still receives the operator's original prompt unchanged in every case.
+only artifacts or whitespace remain, the optimizer is skipped. The host still
+receives the operator's original prompt unchanged in every case.
 
-Everything is auditable: `~/.claude/cyberprompt/log.jsonl` records every
+Everything is auditable: `~/.claude/cyberprompt/log.jsonl` on Claude Code or
+`${CODEX_HOME:-$HOME/.codex}/cyberprompt/log.jsonl` on Codex records every
 original/optimized pair with its disposition, the warrant the rewrite claimed,
 the speech acts and source-quoted requirements it extracted, its assumptions,
 duration, advisory size, and any gate verdict. Mode `0600`, `flock`-guarded,
-your prompts stay yours.
+your prompts stay yours — and the two hosts never share state.
 
 ## ▸ What's skipped automatically
 
@@ -230,18 +407,23 @@ will.
 **ESC does not retract an advisory that already shipped.** Once the hook
 injects, the transcript is append-only — there is no amend path, and
 everything after that point descends from the injected node. ESC stops
-*generation*; it does not un-inject. The clean recovery when a rewrite
-misreads you:
+*generation*; it does not un-inject.
+
+On Claude Code, rewind the conversation:
 
 1. `ESC` — stop the model.
 2. `ESC` `ESC` on an empty composer — open the rewind menu.
 3. **Restore conversation** to the turn before your prompt.
 4. Resend with `skipit`.
 
+On Codex, stop generation, start or fork a clean conversation before the bad
+turn, and resend with `skipit`. A later correction cannot erase developer
+context already recorded in the existing transcript.
+
 Toggling the plugin off works too, but it is a bigger hammer than the
 situation needs, and the sentinel stays off until you remember it.
 
-Two honest footnotes. The grey block shows `optimized_prompt` alone, while
+Two honest footnotes. The visible terminal block shows `optimized_prompt` alone, while
 the model additionally receives the explicit task, every constraint with its
 verbatim source quote, and the non-binding inferences — if the grey text
 looks thin, the advisory usually is not; check `log.jsonl`. And the restraint

@@ -1,0 +1,97 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "disposition",
+    "rewrite_warrant",
+    "speech_acts",
+    "explicit_requirements",
+    "assumptions",
+    "optimized_prompt"
+  ],
+  "properties": {
+    "disposition": {
+      "type": "string",
+      "enum": [
+        "rewrite",
+        "pass_through"
+      ]
+    },
+    "rewrite_warrant": {
+      "type": "string",
+      "description": "The single defect this rewrite repairs. Must be none for pass_through and non-none for rewrite.",
+      "enum": [
+        "referent_bound",
+        "self_correction_discarded",
+        "buried_constraint_hoisted",
+        "dictation_cleanup",
+        "ambiguity_restructured",
+        "none"
+      ]
+    },
+    "speech_acts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_quote",
+          "normalized"
+        ],
+        "properties": {
+          "source_quote": {
+            "type": "string",
+            "minLength": 1
+          },
+          "normalized": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "explicit_requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_quote",
+          "normalized"
+        ],
+        "properties": {
+          "source_quote": {
+            "type": "string",
+            "minLength": 1
+          },
+          "normalized": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "text",
+          "confidence"
+        ],
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "optimized_prompt": {
+      "type": "string"
+    }
+  }
+}
