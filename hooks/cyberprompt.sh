@@ -625,7 +625,7 @@ DEGRADED_NOTE=""
 [ -n "$BRIEF_OMITTED" ] && DEGRADED_NOTE=$'\n▸ brief too long to inject — model received task + constraints only'
 jq -n --arg ctx "$CONTEXT" --arg opt "$OPTIMIZED" --arg hdr "$(xp_header)" --arg deg "$DEGRADED_NOTE" '{
   hookSpecificOutput: {hookEventName: "UserPromptSubmit", additionalContext: $ctx},
-  systemMessage: ($hdr + "\n---\n" + $opt + $deg),
+  systemMessage: ($hdr + "\n---\n" + $opt + $deg + "\n▸ skipit to bypass"),
   suppressOutput: true
 }'
 exit 0

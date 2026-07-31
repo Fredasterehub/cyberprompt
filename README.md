@@ -207,7 +207,32 @@ And anything you tell it to skip: `skipit` at the start or end of a prompt
 bypasses the optimizer for that one prompt — no call, no wait, one line of
 confirmation, next prompt back to normal. Dictation-friendly: the two-word
 `skip it` works too, at the start of the prompt only (a trailing "…, skip it"
-is ordinary English and would misfire).
+is ordinary English and would misfire). The marker stays in the prompt the
+model sees; `UserPromptSubmit` cannot edit your text, and cyberprompt never
+will.
+
+## ▸ Killing a rewrite in flight
+
+**ESC does not retract an advisory that already shipped.** Once the hook
+injects, the transcript is append-only — there is no amend path, and
+everything after that point descends from the injected node. ESC stops
+*generation*; it does not un-inject. The clean recovery when a rewrite
+misreads you:
+
+1. `ESC` — stop the model.
+2. `ESC` `ESC` on an empty composer — open the rewind menu.
+3. **Restore conversation** to the turn before your prompt.
+4. Resend with `skipit`.
+
+Toggling the plugin off works too, but it is a bigger hammer than the
+situation needs, and the sentinel stays off until you remember it.
+
+Two honest footnotes. The grey block shows `optimized_prompt` alone, while
+the model additionally receives the explicit task, every constraint with its
+verbatim source quote, and the non-binding inferences — if the grey text
+looks thin, the advisory usually is not; check `log.jsonl`. And the restraint
+gate reduces *damage*, not waiting: a `pass_through` verdict still costs the
+full optimizer call. `skipit` is the lever that costs nothing.
 
 ## ▸ House rules
 

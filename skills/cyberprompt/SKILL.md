@@ -108,3 +108,10 @@ plugin (manual installs seed it to `~/.claude/skills/claude-5`); set
 - Platform constraint: `UserPromptSubmit` cannot truly replace the prompt — the
   model still sees the original, plus a system-reminder instructing it to act
   on the optimized version. This is the closest achievable to substitution.
+- **ESC does not retract an injected advisory** (append-only transcript, no
+  amend path). Clean recovery from a bad rewrite: ESC → ESC-ESC on the empty
+  composer → Restore conversation → resend with `skipit`. Teach this instead
+  of the global toggle.
+- The grey block shows `optimized_prompt` only; the model also receives the
+  task, source-quoted constraints, and inferences. Operator and model see
+  different artifacts — judge the advisory from `log.jsonl`, not the grey text.
