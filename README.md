@@ -27,9 +27,12 @@ prompting references it wields). Toggle it on, and every prompt you type gets in
 millisecond between Enter and inference — rewritten for clarity by a headless model call,
 validated by mechanical gates, and injected as an *advisory* execution brief. You see the
 rewrite in a pale terminal whisper. The model gets a contract. Your original words stay
-**gospel**. And the forge is quick about it: its ~16KB of prompting references ride the
-server-side prompt cache, so the warm path runs faster than the stateless v0.0.1 call
-ever did.
+**gospel**. And the forge knows when to hold its tongue: passthrough is the
+presumption, and a rewrite has to name the specific defect it repairs — or say
+nothing at all. When you'd rather it not even look, one word (`skipit`) stands
+it down for that prompt. The warm path is quick about it too: ~16KB of prompting
+references ride the server-side prompt cache, so it runs faster than the
+stateless v0.0.1 call ever did.
 
 ```
 ⟨ WORDRUNNER.EXE ⟩ LVL 3 · Half-Sync ▸ 288 XP ▸ next @ 500 XP
@@ -149,12 +152,13 @@ returned, all three variants preserved 100% of must-preserve constraints and
 neither injection fixture landed. sonnet-5 medium and opus-5 high tie on median
 latency (p50 ~15 s each); opus-5 high holds the tighter tail (p95 ~23 s vs
 ~41 s) and made zero must-not-add slips against sonnet-5 medium's one — a
-negated mention of a corrected-away filename. sonnet-5 medium stays the default
-on price, not on winning. Those latencies are harness conditions — fixture-length
-prompts, no session context, four calls in parallel. Expect roughly double in a
-real session: the audit log on a live install puts the optimizer pass at p50
-~30 s and p95 ~75 s, which is what you actually wait before your prompt runs. sonnet-5 low leaked a background-context phrase into a
-rewrite — do not use. Disposition and speech-act accuracy are deliberately not
+negated mention of a corrected-away filename. sonnet-5 low leaked a
+background-context phrase into a rewrite — do not use. sonnet-5 medium stays
+the default on price, not on winning. Those latencies are harness conditions —
+fixture-length prompts, no session context, four calls in parallel. Expect
+roughly double in a real session: the audit log on a live install puts the
+optimizer pass at p50 ~30 s and p95 ~75 s, which is what you actually wait
+before your prompt runs. Disposition and speech-act accuracy are deliberately not
 part of this verdict: every variant scores below a trivial always-rewrite
 baseline, which is a fixture-labeling problem the suite still owes a
 recalibration. A separate offline suite
@@ -201,8 +205,10 @@ only artifacts or whitespace remain, the optimizer is skipped. Claude Code
 still receives the operator's original prompt unchanged in every case.
 
 Everything is auditable: `~/.claude/cyberprompt/log.jsonl` records every
-original/optimized pair with disposition, duration, and gate verdicts.
-Mode `0600`, `flock`-guarded, your prompts stay yours.
+original/optimized pair with its disposition, the warrant the rewrite claimed,
+the speech acts and source-quoted requirements it extracted, its assumptions,
+duration, advisory size, and any gate verdict. Mode `0600`, `flock`-guarded,
+your prompts stay yours.
 
 ## ▸ What's skipped automatically
 

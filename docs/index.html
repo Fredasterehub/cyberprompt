@@ -236,7 +236,8 @@
 <span class="ok">Constraints (each traceable to the original):</span>
 <span class="ok">  - do not kill any process          [source: "don't kill anything ok"]</span>
 <span class="ok">  - report only, await my decision   [source: "just tell me what you see"]</span>
-<span class="ok">Non-binding inference: memory growth started with last night's deploy.</span></pre>
+<span class="ok">Non-binding inference: memory growth started with last night's deploy.</span>
+<span class="qt">▸ skipit to bypass</span></pre>
   </div>
 </header>
 
@@ -280,9 +281,21 @@
       work you didn't ask for. New topic? Memory dropped, on the spot.
       <code>HISTORY_TURNS=0</code> switches it off entirely.</p></div>
     <div class="card"><h3>Knows when to shut up</h3>
-      <p>Already clear? Then nothing happens — your prompt goes through as-is.
-      No rewrite for the sake of rewriting. Re-chroming preem is gonk
-      vandalism.</p></div>
+      <p>Leaving your prompt alone is the default, and that's enforced now, not
+      promised: to touch your words the daemon must name the one thing it's
+      fixing — an "it" that needed a name, a mid-sentence change of mind, a
+      requirement buried in an aside. "I made it clearer" doesn't count, and a
+      machine checks. Re-chroming preem is gonk vandalism.</p></div>
+    <div class="card"><h3>Your nerve is yours</h3>
+      <p>A rewriter that turns "then push it" into "confirm with me before
+      pushing" hasn't clarified anything — it has quietly taken back permission
+      you gave. Banned outright: no confirm-first, no ask-if-unsure, no cold
+      feet added on your behalf. You said push. It says push.</p></div>
+    <div class="card"><h3>One word stands it down</h3>
+      <p>Say <code>skipit</code> at the start or end of a prompt and the forge
+      steps aside for that one — no call, no wait, one line of confirmation,
+      next prompt back to normal. Works typed or dictated ("skip it" at the
+      start does the same thing).</p></div>
     <div class="card"><h3>Fails open, always</h3>
       <p>Timeout, API hiccup, garbage output, missing file — every failure has
       the same ending: your prompt goes through exactly as you typed it, with a
@@ -307,16 +320,19 @@
 
 <section class="wrap gates">
   <h2>The gates</h2>
-  <pre><span class="g">schema valid?</span> ─▸ <span class="g">source_quotes verbatim?</span> ─▸ <span class="g">length ≤ ceiling?</span> ─▸ <span class="g">tokens retained/accounted?</span>
-     │                   │                        │                     │
-     ▼ <span class="f">fail</span>              ▼ <span class="f">fail</span>                   ▼ <span class="f">fail</span>                ▼ <span class="f">fail</span>
-          <span class="s">ORIGINAL PASSES THROUGH UNCHANGED — logged, flagged, fail-open</span></pre>
+  <pre><span class="g">schema valid?</span> ─▸ <span class="g">reason named?</span> ─▸ <span class="g">source_quotes verbatim?</span> ─▸ <span class="g">length ≤ ceiling?</span> ─▸ <span class="g">tokens retained/accounted?</span> ─▸ <span class="g">fits the slot?</span>
+     │                │                  │                        │                     │                        │
+     ▼ <span class="f">fail</span>           ▼ <span class="f">fail</span>             ▼ <span class="f">fail</span>                   ▼ <span class="f">fail</span>                ▼ <span class="f">fail</span>                   ▼ <span class="f">fail</span>
+               <span class="s">ORIGINAL PASSES THROUGH UNCHANGED — logged, flagged, fail-open</span></pre>
   <p>The length cap scales with your prompt — twice its length plus headroom —
   and the forge knows the budget before it writes a word: it tightens to fit,
-  or steps aside. Nobody meets the ICE by surprise. And the fourth gate
+  or steps aside. Nobody meets the ICE by surprise. The retention gate
   watches your specifics: every file name, path, flag and version you typed
   must come out the other side letter-for-letter — or the daemon has to say,
-  on the record, why one was left out. Silent loss never ships.</p>
+  on the record, why one was left out. Silent loss never ships. And when a
+  finished rewrite would overflow the slot the platform gives it, the forge
+  trims its own suggestion — never your constraints — and says so on both
+  sides of the glass.</p>
 </section>
 
 <section class="wrap install" id="install">
