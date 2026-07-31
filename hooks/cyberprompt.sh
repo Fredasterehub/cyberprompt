@@ -37,7 +37,12 @@ PROMPT="$RAW_PROMPT"
 # incl. negative controls). (a) Whisper hallucination credits: dictation pastes
 # carry known ASR-hallucinated lines; strip only lines that ARE the artifact
 # once trimmed — embedded mentions survive. (b) ASR repetition loops: runs of
-# 3+ identical lines collapse to one. Both are subtractive whole-line edits, so
+# 3+ identical lines collapse to one. (c) Our own chrome: pasted grey blocks
+# carry the WORDRUNNER header / SYNC MILESTONE banners behind a transcript
+# gutter ("  ⎿ <NBSP>UserPromptSubmit says: …"); degutter() peels that prefix
+# byte-wise (mawk in the C locale mangles multibyte character classes, and
+# [[:space:]] does not match NBSP) so the banner lines drop while embedded
+# mentions in operator prose survive. All are subtractive whole-line edits, so
 # every substring of the result is still a substring of what remains.
 STRIPPED_PROMPT=$(awk '
   function flush(  i) {
@@ -45,8 +50,24 @@ STRIPPED_PROMPT=$(awk '
     else for (i = 0; i < cnt; i++) print prev
     cnt = 0
   }
+  function degutter(s,   c) {
+    if (substr(s, 1, 3) == "⎿") s = substr(s, 4)
+    while (length(s) > 0) {
+      c = substr(s, 1, 1)
+      if (c == " " || c == "\t") { s = substr(s, 2); continue }
+      if (substr(s, 1, 2) == "\302\240") { s = substr(s, 3); continue }
+      break
+    }
+    if (index(s, "UserPromptSubmit says:") == 1) {
+      s = substr(s, 23); sub(/^[[:space:]]+/, "", s)
+    }
+    return s
+  }
   {
     t = $0; sub(/^[[:space:]]+/, "", t); sub(/[[:space:]]+$/, "", t)
+    g = degutter(t)
+    if (index(g, "⟨ WORDRUNNER.EXE ⟩") == 1) next
+    if (index(g, "▸▸ SYNC MILESTONE") == 1) next
     if (t == "Sous-titres réalisés par la communauté d'\''Amara.org" ||
         t == "Sous-titrage Société Radio-Canada" ||
         t == "Sous-titrage ST'\'' 501" ||

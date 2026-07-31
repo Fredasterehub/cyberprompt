@@ -219,6 +219,23 @@ run_hook "$(input_json "$LONG_FR")" >/dev/null
 expect_contains "$(cat "$H/stub-argv.txt")" "append-system-prompt" "current-sysprompt-arg"
 expect_not_contains "$(cat "$H/stub-stdin.txt")" "=== REFERENCE: Claude 5 shared" "current-no-inline-refs"
 
+### 23. WORDRUNNER chrome strip: pasted grey-block banners drop, mentions survive
+fresh_home
+structured rewrite "x" '[]' '[]' | stub 0
+NBSP=$(printf '\302\240')
+CHROME_PROMPT="$LONG_FR
+  ⎿ ${NBSP}UserPromptSubmit says: ⟨ WORDRUNNER.EXE ⟩ LVL 1 · Jacked-In ▸ 99 XP ▸ next @ 125 XP
+     ▸▸ SYNC MILESTONE ▸ Jacked-In — First jack-in holds."
+run_hook "$(input_json "$CHROME_PROMPT")" >/dev/null
+STDIN=$(cat "$H/stub-stdin.txt")
+expect_not_contains "$STDIN" "WORDRUNNER.EXE" "chrome-stripped"
+expect_not_contains "$STDIN" "SYNC MILESTONE" "chrome-milestone-stripped"
+expect_contains "$STDIN" "file de jobs" "chrome-strip-keeps-text"
+fresh_home
+structured rewrite "x" '[]' '[]' | stub 0
+run_hook "$(input_json "le header ⟨ WORDRUNNER.EXE ⟩ LVL 3 · Half-Sync est mal aligné sur la page, corrige le rendu du bandeau")" >/dev/null
+expect_contains "$(cat "$H/stub-stdin.txt")" "WORDRUNNER.EXE" "chrome-embedded-survives"
+
 echo
 echo "gate-tests: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]

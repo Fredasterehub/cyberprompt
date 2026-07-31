@@ -83,10 +83,12 @@ plugin (manual installs seed it to `~/.claude/skills/claude-5`); set
 - **Fail-open**: any failure (skill missing, `claude -p` error/timeout/empty
   output) passes the original prompt through unchanged and warns the operator
   via `systemMessage`.
-- **Pre-optimizer hygiene**: exact known Whisper credit lines and 3+ identical
-  line repetitions are removed only from the optimizer input. Embedded
-  mentions survive; an artifact-only result skips the optimizer; the original
-  submitted prompt remains authoritative and unchanged.
+- **Pre-optimizer hygiene**: exact known Whisper credit lines, 3+ identical
+  line repetitions, and cyberprompt's own pasted chrome (WORDRUNNER header /
+  SYNC MILESTONE banners, even behind a transcript gutter) are removed only
+  from the optimizer input. Embedded mentions survive; an artifact-only result
+  skips the optimizer; the original submitted prompt remains authoritative and
+  unchanged.
 - **Retention gate**: long `--flags`, explicit or dotted paths, snake/camel/
   PascalCase identifiers, version-shaped tokens, and dotted filenames outside
   inline quoted spans must remain verbatim in the execution brief or be quoted

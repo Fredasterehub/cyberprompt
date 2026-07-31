@@ -184,8 +184,10 @@ raw token in `assumptions`; silent loss fails open. Paste-heavy prompts with
 more than 25 discovered anchors skip this gate rather than being forced through
 an unreliable partial check.
 
-Before the optimizer call, exact known Whisper credit lines are stripped and
-3-or-more identical-line runs are collapsed on its private copy. These are
+Before the optimizer call, exact known Whisper credit lines are stripped,
+3-or-more identical-line runs are collapsed, and cyberprompt's own pasted
+chrome — the WORDRUNNER header and SYNC MILESTONE banners, gutter-prefixed the
+way the terminal pastes them — is dropped, all on its private copy. These are
 whole-line operations: a phrase embedded in a real sentence is untouched. If
 only artifacts or whitespace remain, the optimizer is skipped. Claude Code
 still receives the operator's original prompt unchanged in every case.
