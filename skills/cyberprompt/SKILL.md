@@ -38,7 +38,7 @@ State directory: `~/.claude/cyberprompt/`
 | `enabled` | Sentinel — exists = hook active. No restart needed either way. |
 | `config` | `MODEL=`, `EFFORT=` (pinned reasoning effort, default medium), `MIN_CHARS=`, `OPT_TIMEOUT=` (optimizer call timeout in seconds, default 180 — keep below the 200 s hook-level timeout), `HISTORY_TURNS=` (operator prompts shown as background context, default 4, `0` = stateless), optional `CLAUDE5_SKILL=` override. Pre-optimizer strips and content retention are always on and have no config entries. |
 | `instruction.txt` | Optimizer system instruction template |
-| `log.jsonl` | Audit trail: `{ts, session, optimizer_model, target_model, original, optimized, disposition, rewrite_warrant, duration_ms, context_chars, speech_acts, explicit_requirements, assumptions, gate_failure}` |
+| `log.jsonl` | Audit trail: `{ts, session, optimizer_model, target_model, original, optimized, disposition, rewrite_warrant, duration_ms, context_chars, advisory_chars, speech_acts, explicit_requirements, assumptions, gate_failure}` |
 | `error.log` | stderr of failed `claude -p` calls |
 
 ## Install (first time for a user)

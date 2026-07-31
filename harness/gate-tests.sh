@@ -263,6 +263,24 @@ fresh_home; stub 0 <<<'{}'
 expect_contains "$(run_hook "$(input_json "skipit")")" "systemMessage" "bypass-below-minchars"
 expect_file_absent "$H/stub-stdin.txt" "bypass-below-minchars-nocall"
 
+### 25. advisory overflow ladder: rung 2 drops the brief, rung 3 fails open
+BIGA=$(printf 'a%.0s' $(seq 1 5000))          # zero retention anchors, CEILING caps at 9000
+fresh_home
+A800=$(jq -cn --arg t "$(printf 'z%.0s' $(seq 1 800))" '[{"text":$t,"confidence":0.9}]')
+structured rewrite "$(printf 'y%.0s' $(seq 1 8990))" '[]' "$A800" | stub 0
+OUT=$(run_hook "$(input_json "$BIGA")")
+expect_contains "$OUT" "hookSpecificOutput" "overflow-tier2-ships"
+expect_not_contains "$OUT" "=== SUGGESTED EXECUTION BRIEF ===" "overflow-tier2-no-brief"
+expect_contains "$OUT" "execution brief was omitted" "overflow-tier2-note"
+expect_contains "$OUT" "brief too long to inject" "overflow-tier2-operator-marker"
+expect_contains "$(tail -1 "$STATE/log.jsonl")" '"advisory_chars":' "overflow-advisory-chars-logged"
+fresh_home
+A9800=$(jq -cn --arg t "$(printf 'z%.0s' $(seq 1 9800))" '[{"text":$t,"confidence":0.9}]')
+structured rewrite "une petite réécriture" '[]' "$A9800" | stub 0
+OUT=$(run_hook "$(input_json "$BIGA")")
+expect_contains "$OUT" "injection limit" "overflow-tier3-fails-open"
+expect_not_contains "$OUT" "hookSpecificOutput" "overflow-tier3-no-context"
+
 echo
 echo "gate-tests: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]

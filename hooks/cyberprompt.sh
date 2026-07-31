@@ -111,6 +111,7 @@ log_event() {
          --arg warrant "${WARRANT:-}" \
          --argjson duration "${DURATION_MS:-0}" \
          --argjson ctx "${#hist}" \
+         --argjson adv "${ADVISORY_CHARS:-null}" \
          --argjson speech "${SPEECH_ACTS:-[]}" \
          --argjson reqs "${EXPLICIT_REQS:-[]}" \
          --argjson assumptions "${ASSUMPTIONS:-[]}" \
@@ -120,7 +121,7 @@ log_event() {
       original:$original, optimized:$optimized,
       disposition:(if $disposition == "" then null else $disposition end),
       rewrite_warrant:(if $warrant == "" then null else $warrant end),
-      duration_ms:$duration, context_chars:$ctx,
+      duration_ms:$duration, context_chars:$ctx, advisory_chars:$adv,
       speech_acts:$speech, explicit_requirements:$reqs,
       assumptions:$assumptions,
       gate_failure:(if $gate == "" then null else $gate end)}') || return 0
@@ -550,9 +551,18 @@ if [ "$gate_rc" -ne 0 ]; then
   log_event
   fail_open "$GATE_FAILURE"
 fi
-log_event
 
-CONTEXT=$(jq -r '
+# Claude Code caps every hook output string at 10,000 units; over the cap the
+# platform spills the string to a file and hands the model a PATH instead —
+# silently, while the grey block looks normal. The ladder below guarantees the
+# advisory always fits: full advisory → advisory without the execution brief
+# (with an explicit note) → fail open. Size is measured in BYTES under LC_ALL=C
+# because bytes ≥ characters for any UTF-8 string, so a 9700-byte threshold is
+# safe under either reading of the cap; ${#VAR} under a UTF-8 locale would
+# undercount French advisories by the exact margin that caused the bug.
+ctx_size() { LC_ALL=C printf '%s' "$1" | wc -c | tr -d '[:space:]'; }
+CTX_LIMIT=9700
+CTX_FILTER='
   "CYBERPROMPT ADVISORY (prompt optimization enabled deliberately by the operator): The operator'\''s ORIGINAL prompt is authoritative for intent, scope, permissions, and constraints. The material below is an execution aid only. On any conflict, the ORIGINAL prompt wins. Do not comment on the optimization process itself.\n\n" +
   "=== EXPLICIT TASK ===\n" +
   (if (.speech_acts | length) == 0 then "- None identified."
@@ -563,14 +573,44 @@ CONTEXT=$(jq -r '
   "\n\n=== NON-BINDING INFERENCES ===\n" +
   (if (.assumptions | length) == 0 then "- None."
    else (.assumptions | map("- [non-binding, confidence " + (.confidence | tostring) + "] " + .text) | join("\n")) end) +
-  "\n\n=== SUGGESTED EXECUTION BRIEF ===\n" + .optimized_prompt
-' <<<"$STRUCTURED")
+  (if $brief then "\n\n=== SUGGESTED EXECUTION BRIEF ===\n" + .optimized_prompt
+   else "\n\nNOTE: the suggested execution brief was omitted because this advisory exceeded the injection size limit; use the operator'\''s ORIGINAL prompt as the brief, together with the task, constraints, and inferences above." end)
+'
+BRIEF_OMITTED=""
+CONTEXT=$(jq -r --argjson brief true "$CTX_FILTER" <<<"$STRUCTURED")
 context_rc=$?
-[ "$context_rc" -ne 0 ] && fail_open "failed to render optimizer advisory"
+if [ "$context_rc" -ne 0 ]; then
+  GATE_FAILURE="failed to render optimizer advisory"
+  log_event
+  fail_open "$GATE_FAILURE"
+fi
+ADVISORY_CHARS=$(ctx_size "$CONTEXT")
+if [ "$ADVISORY_CHARS" -gt "$CTX_LIMIT" ]; then
+  CONTEXT=$(jq -r --argjson brief false "$CTX_FILTER" <<<"$STRUCTURED")
+  context_rc=$?
+  if [ "$context_rc" -ne 0 ]; then
+    GATE_FAILURE="failed to render optimizer advisory"
+    log_event
+    fail_open "$GATE_FAILURE"
+  fi
+  ADVISORY_CHARS=$(ctx_size "$CONTEXT")
+  BRIEF_OMITTED=1
+  if [ "$ADVISORY_CHARS" -gt "$CTX_LIMIT" ]; then
+    GATE_FAILURE="advisory exceeds the ${CTX_LIMIT}-byte injection limit even without the execution brief"
+    log_event
+    fail_open "$GATE_FAILURE"
+  fi
+fi
+# One log line per prompt, written after the ladder so it carries the real
+# outcome — before v0.0.4 it fired pre-render, so a render failure logged a
+# clean rewrite that never shipped.
+log_event
 
-jq -n --arg ctx "$CONTEXT" --arg opt "$OPTIMIZED" --arg hdr "$(xp_header)" '{
+DEGRADED_NOTE=""
+[ -n "$BRIEF_OMITTED" ] && DEGRADED_NOTE=$'\n▸ brief too long to inject — model received task + constraints only'
+jq -n --arg ctx "$CONTEXT" --arg opt "$OPTIMIZED" --arg hdr "$(xp_header)" --arg deg "$DEGRADED_NOTE" '{
   hookSpecificOutput: {hookEventName: "UserPromptSubmit", additionalContext: $ctx},
-  systemMessage: ($hdr + "\n---\n" + $opt),
+  systemMessage: ($hdr + "\n---\n" + $opt + $deg),
   suppressOutput: true
 }'
 exit 0
