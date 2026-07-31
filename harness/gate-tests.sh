@@ -238,6 +238,31 @@ structured rewrite "x" '[]' '[]' | stub 0
 run_hook "$(input_json "le header ⟨ WORDRUNNER.EXE ⟩ LVL 3 · Half-Sync est mal aligné sur la page, corrige le rendu du bandeau")" >/dev/null
 expect_contains "$(cat "$H/stub-stdin.txt")" "WORDRUNNER.EXE" "chrome-embedded-survives"
 
+### 24. skipit bypass: start/end forms, two-word rules, ordering vs MIN_CHARS
+fresh_home; stub 0 <<<'{}'
+OUT=$(run_hook "$(input_json "skipit $LONG_FR")")
+expect_contains "$OUT" "skipit" "bypass-start"
+expect_file_absent "$H/stub-stdin.txt" "bypass-start-nocall"
+expect_contains "$(tail -1 "$STATE/log.jsonl")" '"disposition":"bypass"' "bypass-logged"
+expect_contains "$(tail -1 "$STATE/log.jsonl")" '"duration_ms":null' "bypass-duration-null"
+fresh_home; stub 0 <<<'{}'
+expect_contains "$(run_hook "$(input_json "$LONG_FR, skipit.")")" "systemMessage" "bypass-end"
+expect_file_absent "$H/stub-stdin.txt" "bypass-end-nocall"
+fresh_home; stub 0 <<<'{}'
+expect_contains "$(run_hook "$(input_json "Skip it. $LONG_FR")")" "systemMessage" "bypass-twoword-start"
+expect_file_absent "$H/stub-stdin.txt" "bypass-twoword-nocall"
+fresh_home
+structured rewrite "x" '[]' '[]' | stub 0
+run_hook "$(input_json "$LONG_FR, on peut skip it plus tard")" >/dev/null
+expect_contains "$(cat "$H/stub-stdin.txt")" "file de jobs" "bypass-twoword-trailing-optimizes"
+fresh_home
+structured rewrite "x" '[]' '[]' | stub 0
+run_hook "$(input_json "skip iterating over the archived jobs and only replay the failed ones from the last visible batch")" >/dev/null
+expect_contains "$(cat "$H/stub-stdin.txt")" "skip iterating" "bypass-negative-control"
+fresh_home; stub 0 <<<'{}'
+expect_contains "$(run_hook "$(input_json "skipit")")" "systemMessage" "bypass-below-minchars"
+expect_file_absent "$H/stub-stdin.txt" "bypass-below-minchars-nocall"
+
 echo
 echo "gate-tests: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]

@@ -203,6 +203,12 @@ machine-generated turns (task notifications, teammate messages — learned the
 hard way when the daemon optimized a background notification into a quest and
 the model went on the quest), prompts under `MIN_CHARS`, and its own recursion.
 
+And anything you tell it to skip: `skipit` at the start or end of a prompt
+bypasses the optimizer for that one prompt — no call, no wait, one line of
+confirmation, next prompt back to normal. Dictation-friendly: the two-word
+`skip it` works too, at the start of the prompt only (a trailing "…, skip it"
+is ordinary English and would misfire).
+
 ## ▸ House rules
 
 1. **The original is gospel.** Always.

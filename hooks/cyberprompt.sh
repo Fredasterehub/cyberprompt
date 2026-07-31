@@ -97,19 +97,6 @@ HISTORY_TURNS=4
 SKILL="${CLAUDE5_SKILL:-${PLUGIN:+$PLUGIN/skills/claude-5}}"
 SKILL="${SKILL:-$HOME/.claude/skills/claude-5}"
 
-# Skip slash commands, ! (shell) and # (memory) shortcuts, and short prompts
-# that would cost more latency than the rewrite is worth.
-case "$PROMPT" in
-  /*|!*|\#*) exit 0 ;;
-esac
-# Skip machine-generated turns that reach the session as "user" prompts
-# (background-task notifications, teammate/agent-team messages, system events):
-# only prompts the operator actually typed should be optimized.
-case "$PROMPT" in
-  "<task-notification"*|"[SYSTEM NOTIFICATION"*|"<teammate-message"*|"<system-"*|"[Request interrupted"*) exit 0 ;;
-esac
-[ "${#PROMPT}" -lt "$MIN_CHARS" ] && exit 0
-
 log_event() {
   # TARGET and HISTORY are first assigned far below this function's earliest
   # caller (the bypass path): under set -u a bare expansion would kill the
@@ -147,6 +134,41 @@ log_event() {
     printf '%s\n' "$line" >&9
   )
 }
+
+# Skip slash commands, ! (shell) and # (memory) shortcuts, and short prompts
+# that would cost more latency than the rewrite is worth.
+case "$PROMPT" in
+  /*|!*|\#*) exit 0 ;;
+esac
+# Skip machine-generated turns that reach the session as "user" prompts
+# (background-task notifications, teammate/agent-team messages, system events):
+# only prompts the operator actually typed should be optimized.
+case "$PROMPT" in
+  "<task-notification"*|"[SYSTEM NOTIFICATION"*|"<teammate-message"*|"<system-"*|"[Request interrupted"*) exit 0 ;;
+esac
+
+# One-shot bypass. The marker cannot be removed from the submitted prompt
+# (UserPromptSubmit cannot rewrite it), so the model still sees "skipit" —
+# accepted, it reads as an operator flag. Case-insensitive. "skipit" is
+# honored at either end of the prompt; the two-word "skip it" only at the
+# START, because a trailing "…, skip it" is ordinary English addressed to the
+# assistant, while a leading "skip it," is an imperative addressed to this
+# tool. Runs before MIN_CHARS so a bare "skipit" visibly works, and a
+# confirmation is emitted because silence is indistinguishable from the hook
+# not firing. duration_ms is null, not 0 — zeros poison the latency series.
+CP_LOWER=${PROMPT,,}
+CP_RE_START='^[[:punct:][:space:]]*skip[[:space:]]*it([[:punct:][:space:]]|$)'
+CP_RE_END='(^|[[:punct:][:space:]])skipit[[:punct:][:space:]]*$'
+if [[ $CP_LOWER =~ $CP_RE_START ]] || [[ $CP_LOWER =~ $CP_RE_END ]]; then
+  DISPOSITION="bypass"
+  DURATION_MS=null
+  log_event
+  jq -n '{systemMessage: "cyberprompt: skipit — optimizer bypassed for this prompt.",
+          suppressOutput: true}'
+  exit 0
+fi
+
+[ "${#PROMPT}" -lt "$MIN_CHARS" ] && exit 0
 
 gate_output() {
   local original="$1" payload

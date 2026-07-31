@@ -99,6 +99,10 @@ plugin (manual installs seed it to `~/.claude/skills/claude-5`); set
   (`#`) shortcuts, prompts under `MIN_CHARS`, and all subagent prompts
   (`agent_id` present). Recursion into the hook's own `claude -p` call is
   guarded by the `CYBERPROMPT_BUSY` env var.
+- **Skipped on demand**: `skipit` at the start or end of a prompt (or `skip
+  it` at the start — typed or dictated) bypasses the optimizer for that one
+  prompt, confirms in one line, and logs `disposition:"bypass"`. The marker
+  stays visible in the submitted prompt; the platform cannot remove it.
 - The target model is auto-detected from the session transcript (last assistant
   message), so the rewrite uses the matching per-model reference file.
 - Platform constraint: `UserPromptSubmit` cannot truly replace the prompt — the
