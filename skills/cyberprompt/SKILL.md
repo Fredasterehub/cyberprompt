@@ -22,14 +22,19 @@ injects it as an ADVISORY contract in
 `additionalContext`: the original prompt stays authoritative; the rewrite
 (explicit task / constraints traceable to the original / non-binding
 inferences / execution brief) is an execution aid. Deterministic gates reject
-bad rewrites (schema validation, non-empty source-quote substring checks,
-length ceiling, and retention of identifier-shaped content tokens unless an
-assumption explicitly accounts for the drop), and a `pass_through` disposition
-skips injection when the prompt is already clear. The optimizer instruction
-also distinguishes replacement self-repairs from additions, preserves
-questions and hedges, and permits only unambiguous surface-form ASR repairs
-with raw-quote provenance. The operator sees the rewrite via `systemMessage`;
-every pair is logged with disposition/duration/gate_failure.
+bad rewrites (schema validation, a named `rewrite_warrant` — rewrite+"none" is
+rejected, non-empty source-quote substring checks, length ceiling, retention
+of identifier-shaped content tokens unless an assumption explicitly accounts
+for the drop, and an advisory-size ladder that drops the execution brief
+rather than overflow the platform's injection cap). `pass_through` is the
+presumption: the instruction requires a specific defect — bound referent,
+discarded self-correction, hoisted buried constraint, dictation damage,
+settled ambiguity — before rewriting, and bans invented caution (confirm-first
+/ ask-if-unclear language the operator didn't write). The optimizer also
+distinguishes replacement self-repairs from additions, preserves questions and
+hedges, and permits only unambiguous surface-form ASR repairs with raw-quote
+provenance. The operator sees the rewrite via `systemMessage`; every pair is
+logged with disposition/warrant/duration/gate_failure.
 
 State directory: `~/.claude/cyberprompt/`
 

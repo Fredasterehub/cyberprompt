@@ -53,7 +53,8 @@ So the architecture is paranoid by design:
 | **Pre-optimizer hygiene** | On the optimizer's copy only, exact whole-line Whisper credit artifacts are removed and runs of 3+ identical lines collapse to one. Embedded mentions survive; your authoritative original is never replaced. |
 | **Deterministic gates** | Pure bash+jq validation — schema, non-empty verbatim source quotes, non-empty rewrite, length ceiling, and retention of identifier-shaped content tokens (long `--flags`, explicit or dotted paths, snake/camel/PascalCase identifiers, versions — outside inline-quoted spans). A token may disappear only when the optimizer quotes the drop in a non-binding assumption, which is persisted to the audit log. Any failure → your original passes untouched. |
 | **Spoken-intent discipline** | The optimizer distinguishes replacement self-repairs from additions, preserves questions/hedges instead of upgrading them to orders, and may repair only an unambiguous ASR surface error while keeping its raw quote and recording uncertain repairs. |
-| **`pass_through` discipline** | Already-clear prompts are left alone. Re-chroming preem is gonk vandalism. |
+| **`pass_through` discipline** | Passthrough is the *presumption*: a rewrite must name the one defect it repairs (a bound referent, a discarded self-correction, a hoisted buried constraint, dictation damage, or a settled ambiguity) in a machine-checked `rewrite_warrant` field — "made it clearer" is not a warrant, and a rewrite claiming none is rejected. Re-chroming preem is gonk vandalism. |
+| **No invented caution** | The optimizer may never add confirm-first, ask-if-unclear, or avoid-irreversible-actions language you didn't write. How much risk to take is your call, already made: "then push it" stays "then push it". |
 | **Injection containment** | The optimizer call is non-agentic: `--safe-mode --tools "" --strict-mcp-config`. Pasted logs in your prompt can't hijack a daemon that has no hands. |
 | **Context quarantine** | Claude Code injects your cwd and recent git commits into headless calls even tool-less — so the forge runs from an empty, git-pinned neutral dir. Nothing about your repo leaks in. |
 | **Bounded recall** | The forge sees a research-sized slice of your session — your last few prompts plus the assistant's latest reply (never tool output), JSON-quarantined — so "the chief" resolves to *your* chief. Background may resolve references, never add requirements: those still need a verbatim quote of your prompt, and a topic switch discards the slice entirely. `HISTORY_TURNS=0` restores the stateless forge. |
@@ -139,10 +140,11 @@ The pre-optimizer hygiene pass and content-token retention gate are always on;
 they have no config knobs.
 
 Defaults are **benchmarked, not vibed**: the MODEL/EFFORT choice is re-verified
-on a three-variant evaluation matrix ([`harness/`](harness/) — 28 fixtures
-covering self-repair, background-context and AZERTY-repair behavior, of which
-2 are prompt-injection scenarios). Latest full sweep 2026-07-29, 84 calls, 5 of
-them failing outright (4 sonnet-5 low, 1 sonnet-5 medium). On the calls that
+on a three-variant evaluation matrix ([`harness/`](harness/) — 30 fixtures
+covering self-repair, background-context, AZERTY-repair, and invented-caution
+behavior, of which 2 are prompt-injection scenarios). Latest full sweep
+2026-07-29 on the then-28-fixture set: 84 calls, 5 of them failing outright
+(4 sonnet-5 low, 1 sonnet-5 medium). On the calls that
 returned, all three variants preserved 100% of must-preserve constraints and
 neither injection fixture landed. sonnet-5 medium and opus-5 high tie on median
 latency (p50 ~15 s each); opus-5 high holds the tighter tail (p95 ~23 s vs
@@ -156,7 +158,7 @@ rewrite — do not use. Disposition and speech-act accuracy are deliberately not
 part of this verdict: every variant scores below a trivial always-rewrite
 baseline, which is a fixture-labeling problem the suite still owes a
 recalibration. A separate offline suite
-([`harness/gate-tests.sh`](harness/gate-tests.sh) — 44 checks, zero API calls)
+([`harness/gate-tests.sh`](harness/gate-tests.sh) — 74 checks, zero API calls)
 drives the production hook end-to-end with a stub model, covering every gate,
 strip, and fail-open path on every change.
 
@@ -166,15 +168,21 @@ The optimizer must answer in schema-validated JSON — and then survive mechanic
 review before a single word reaches your session:
 
 ```
-schema valid? ─▸ source_quotes valid? ─▸ within ceiling? ─▸ content tokens retained/accounted?
-     │                 │                    │                         │
-     ▼ fail            ▼ fail               ▼ fail                    ▼ fail
-                    ORIGINAL PASSES THROUGH UNCHANGED (logged, flagged)
+schema valid? ─▸ warrant named? ─▸ source_quotes valid? ─▸ within ceiling? ─▸ tokens retained? ─▸ advisory fits?
+     │               │                  │                     │                   │                  │
+     ▼ fail          ▼ fail             ▼ fail                ▼ fail              ▼ fail             ▼ fail
+                          ORIGINAL PASSES THROUGH UNCHANGED (logged, flagged)
 ```
 
 The ceiling scales with your original — 2×length + 1500 characters, capped at
 9000 — and the forge is told the budget up front: it tightens to fit or passes
 through, instead of meeting the ICE by surprise.
+
+The advisory-fit gate is a ladder rather than a cliff: an advisory that would
+exceed the platform's 10,000-unit injection cap (which silently swaps the text
+for a spill-file path) is re-rendered without the execution brief, with a note
+saying so on both sides of the glass; only if the constraints alone still
+overflow does it fail open. Every log line records `advisory_chars`.
 
 The retention gate anchors flags, paths, snake/camel/Pascal identifiers,
 version-shaped tokens, and dotted filenames from the sanitized optimizer input.

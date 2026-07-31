@@ -2,8 +2,8 @@
   "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
   "name": "cyberprompt",
   "displayName": "CYBERPROMPT",
-  "version": "0.0.3",
-  "description": "Automatic advisory prompt optimizer for Claude Code. Before a non-agentic, tool-less claude -p rewrite, its private input drops exact whole-line Whisper credit artifacts and collapses runs of 3+ identical lines. The optimizer handles replacement self-repairs, preserves questions and hedges, and permits bounded ASR surface repair. Deterministic schema, source-quote, length, and content-token retention gates fail open to the authoritative original; deliberate token drops must be recorded as assumptions. Includes bounded reference-resolution context, prompt-cached guidance, WORDRUNNER.EXE narration, and XP.",
+  "version": "0.0.4",
+  "description": "Automatic advisory prompt optimizer for Claude Code. Passthrough by default: a rewrite must name the defect it repairs in a machine-checked rewrite_warrant, and may never add caution the operator didn't express. A skipit marker bypasses the optimizer for one prompt. Before a non-agentic, tool-less claude -p rewrite, its private input drops Whisper credit artifacts, repetition loops, and pasted WORDRUNNER chrome. Deterministic schema, warrant, source-quote, length, content-token retention, and advisory-size gates fail open to the authoritative original; speech acts, requirements, and assumptions are all audit-logged. Includes bounded reference-resolution context, prompt-cached guidance, WORDRUNNER.EXE narration, and XP.",
   "author": {
     "name": "Fredastere",
     "url": "https://github.com/Fredasterehub"

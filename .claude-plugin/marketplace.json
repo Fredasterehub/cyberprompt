@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "cyberprompt",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "CYBERPROMPT — advisory Claude Code prompt rewriting with pre-optimizer ASR hygiene, intent-preserving speech rules, and deterministic provenance gates.",
   "owner": {
     "name": "Fredastere",
@@ -11,7 +11,7 @@
     {
       "name": "cyberprompt",
       "description": "Automatic advisory prompt optimizer: a UserPromptSubmit hook sanitizes only the optimizer copy by stripping exact Whisper credit lines and collapsing runs of 3+ identical lines, then uses a headless tool-less claude -p rewrite with bounded reference-resolution context. Replacement repairs, illocutionary force, and bounded ASR repair are instruction-governed; schema, verbatim source-quote, length, and content-token retention gates fail open to the original.",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "author": {
         "name": "Fredastere",
         "url": "https://github.com/Fredasterehub"
