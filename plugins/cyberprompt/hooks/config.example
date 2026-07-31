@@ -1,0 +1,11 @@
+# CYBERPROMPT configuration for Codex (parsed as data, never sourced as shell)
+MODEL=gpt-5.6-sol
+# Sol-low is the Codex CLI default and the initial latency candidate.
+# Compare against medium on the bundled behavior harness before changing it.
+EFFORT=low
+# Prompts shorter than this pass through without an optimizer call.
+MIN_CHARS=80
+# Keep below the 200-second hook timeout in hooks.json.
+OPT_TIMEOUT=180
+# Recent operator prompts used only to resolve references; 0 is stateless.
+HISTORY_TURNS=4

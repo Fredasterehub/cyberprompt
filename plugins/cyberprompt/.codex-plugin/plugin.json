@@ -1,0 +1,38 @@
+{
+  "name": "cyberprompt",
+  "version": "0.1.0",
+  "description": "Intent-preserving prompt optimization for Codex CLI, with a deterministic UserPromptSubmit gate, a GPT-5.6 Sol forge, audit logs, one-turn bypass, and instant on/off control.",
+  "author": {
+    "name": "Fredastere",
+    "url": "https://github.com/Fredasterehub"
+  },
+  "homepage": "https://fredasterehub.github.io/cyberprompt/",
+  "repository": "https://github.com/Fredasterehub/cyberprompt",
+  "license": "MIT",
+  "keywords": [
+    "prompt-optimization",
+    "codex",
+    "gpt-5.6-sol",
+    "hooks",
+    "user-prompt-submit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "CYBERPROMPT for Codex",
+    "shortDescription": "Intent-preserving prompt forge for Codex",
+    "longDescription": "Intercepts operator prompts in Codex CLI, applies a GPT-5.6 Sol normalization pass, rejects unproven or lossy rewrites with deterministic gates, and injects only a source-traceable advisory while the original remains authoritative.",
+    "developerName": "Fredastere",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Hooks"
+    ],
+    "websiteURL": "https://fredasterehub.github.io/cyberprompt/",
+    "defaultPrompt": [
+      "Use $cyberprompt:cyberprompt to turn CYBERPROMPT on.",
+      "Use $cyberprompt:cyberprompt to show CYBERPROMPT status.",
+      "Use $cyberprompt:gpt-5-6-sol to improve this prompt."
+    ],
+    "brandColor": "#FCEE0A"
+  }
+}

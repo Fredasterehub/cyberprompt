@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CYBERPROMPT — your prompts jack in raw, they jack out preem</title>
-<meta name="description" content="A Claude Code plugin that rewrites your prompts in the millisecond before inference — guarded by deterministic gates, narrated by a rogue daemon, levelled by sync depth.">
+<meta name="description" content="A Codex CLI and Claude Code prompt optimizer that rewrites prompts in the millisecond before inference — guarded by deterministic gates, narrated by a rogue daemon, levelled by sync depth.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="CYBERPROMPT — your prompts jack in raw, they jack out preem">
-<meta property="og:description" content="A Claude Code plugin that rewrites your prompts in the millisecond before inference — guarded by deterministic gates, narrated by a rogue daemon, levelled by sync depth.">
+<meta property="og:description" content="A Codex CLI and Claude Code prompt optimizer that rewrites prompts in the millisecond before inference — guarded by deterministic gates, narrated by a rogue daemon, levelled by sync depth.">
 <meta property="og:url" content="https://fredasterehub.github.io/cyberprompt/">
 <meta property="og:image" content="https://raw.githubusercontent.com/Fredasterehub/cyberprompt/main/docs/assets/rain.gif">
 <meta name="twitter:card" content="summary_large_image">
@@ -184,6 +184,23 @@
   .install .c{ color:var(--ink-dim) } .install .k{ color:var(--primary) }
   .install p{ color:var(--ink-dim); font-size:.85rem; margin-top:1rem; max-width:38rem }
   .install p code{ color:var(--accent) }
+  .install-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 390px), 1fr)); gap:1.2rem }
+  .install-platform{
+    background:var(--bg-raised); border:1px solid var(--line);
+    padding:1.2rem 1.3rem 1.3rem; clip-path:var(--chamfer);
+  }
+  .install-platform:first-child{ border-color:var(--primary) }
+  .install-platform h3{
+    color:var(--primary); font-size:.9rem; letter-spacing:.14em;
+    text-transform:uppercase; margin-bottom:.8rem;
+  }
+  .install-platform h3 span{ color:var(--accent); font-size:.7rem }
+  .install-platform pre{ border-color:var(--line); padding:1rem; font-size:.76rem; line-height:1.8 }
+  .install-platform p{ max-width:none }
+  .install .sol-note{
+    max-width:none; margin-top:1.2rem; padding:1rem 1.2rem;
+    border-left:2px solid var(--accent); background:oklch(70% 0.21 45 / .06);
+  }
 
   /* lore */
   .lore blockquote{
@@ -209,18 +226,18 @@
   <span><span class="dot">●</span> INTERSTICE // ONLINE</span>
   <span>DAEMON: WORDRUNNER.EXE</span>
   <span>GATES: ARMED</span>
-  <span>REL: v0.0.4</span>
+  <span>REL: CLAUDE v0.0.4 · CODEX v0.1.0</span>
   <span class="r">EDDIES = TOKENS</span>
 </div>
 
 <header class="hero wrap">
   <div class="rain-clip"><canvas id="rain" aria-hidden="true"></canvas></div>
-  <div class="pre">// claude code plugin · userpromptsubmit hook</div>
+  <div class="pre">// codex cli + claude code · userpromptsubmit hooks</div>
   <h1>CYBER<span>PROMPT</span><span class="cursor"></span></h1>
   <p class="tag">Your prompts jack in raw. They jack out <b>preem</b>.</p>
   <p class="sub">You type fast, loose, half-dictated. CYBERPROMPT catches each prompt in
-  the millisecond before Claude reads it and forges a sharper version — while hard
-  mechanical rules guarantee the rewrite never changes what you meant. A rogue daemon
+  the millisecond before Codex or Claude reads it and forges a sharper version — while hard
+  mechanical gates reject rewrites that lose or invent checkable requirements. A rogue daemon
   narrates. An XP system deepens. Your original words stay gospel.</p>
   <div class="cta">
     <a class="btn btn-primary" href="#install">JACK IN</a>
@@ -270,10 +287,11 @@
       and only from that copy. What you actually submitted is never edited.
       Ever.</p></div>
     <div class="card"><h3>A daemon with no hands</h3>
-      <p>The rewriter runs with no tools, no file access, no network — it reads
-      text and writes text, nothing else. So a poisoned log you pasted can't
-      hijack it into doing something. There is nothing it <em>can</em>
-      do.</p></div>
+      <p>The rewriter gets no browser, no web search, no shell — and on Codex
+      it runs in a read-only sandbox where any tool activity at all voids the
+      run. Its isolated call still uses the network to reach the model's API,
+      nothing else. A poisoned log you pasted cannot turn it into an operator
+      because there is nothing else it <em>can</em> do.</p></div>
     <div class="card"><h3>Just enough memory</h3>
       <p>The daemon remembers your last few messages — enough to know "the
       chief" is <em>your</em> chief and "that file" is the one from two prompts
@@ -337,17 +355,57 @@
 
 <section class="wrap install" id="install">
   <h2>Jack in</h2>
-  <pre><span class="c"># requirements: Claude Code, jq — the claude-5 forge skill ships in the box</span>
+  <div class="install-grid">
+    <div class="install-platform">
+      <h3>Codex CLI <span>// GPT-5.6 Sol</span></h3>
+      <pre><span class="c"># tested: Codex CLI 0.146.0; requires Bash, jq, git, GNU timeout, flock</span>
+<span class="k">codex plugin marketplace add</span> Fredasterehub/cyberprompt --ref main
+<span class="k">codex plugin add</span> cyberprompt@cyberprompt
+
+<span class="c"># start a new Codex session, then inspect + trust the hook</span>
+<span class="k">/hooks</span>
+
+<span class="c"># ● jack in — hot toggle, no restart</span>
+CYBERPROMPT_STATE="${CODEX_HOME:-$HOME/.codex}/cyberprompt"
+<span class="k">umask</span> 077
+<span class="k">mkdir -p</span> "$CYBERPROMPT_STATE" <span class="k">&amp;&amp; chmod</span> 700 "$CYBERPROMPT_STATE"
+<span class="k">touch</span> "$CYBERPROMPT_STATE/enabled"</pre>
+      <p>Installation does not auto-trust command hooks: open <code>/hooks</code>,
+      inspect the bundled <code>UserPromptSubmit</code> command, and trust it.
+      <code>/plugins</code> + Space toggles the whole bundle; remove only
+      <code>$CYBERPROMPT_STATE/enabled</code> for an instant optimizer-off switch
+      while keeping both skills available. Say <code>skipit</code> for one turn.</p>
+    </div>
+    <div class="install-platform">
+      <h3>Claude Code <span>// Claude forge</span></h3>
+      <pre><span class="c"># requirements: Claude Code, jq — claude-5 ships in the box</span>
 <span class="k">/plugin marketplace add</span> Fredasterehub/cyberprompt
 <span class="k">/plugin install</span> cyberprompt@cyberprompt
-<span class="k">mkdir -p</span> ~/.claude/cyberprompt <span class="k">&amp;&amp; touch</span> ~/.claude/cyberprompt/enabled   <span class="c"># ● jack in</span></pre>
-  <p>The plugin registers the hook and both skills; updates ride the marketplace.
-  No plugin system? <code>git clone</code> the repo anywhere and run
-  <code>install.sh</code> instead. Linux out of the box; macOS wants GNU
-  <code>coreutils</code> + <code>flock</code> on <code>PATH</code>. Restart once
-  after install — then the on/off switch is instant, per prompt, no restart.
-  And the defaults aren't vibes: they won a measured bake-off, and the whole
-  test rig ships in <code>harness/</code> so you can re-run it yourself.</p>
+
+<span class="c"># ● jack in — hot toggle, no restart</span>
+<span class="k">mkdir -p</span> ~/.claude/cyberprompt <span class="k">&amp;&amp; touch</span> ~/.claude/cyberprompt/enabled</pre>
+      <p>The original Claude Code package remains at the repository root and
+      keeps its independent <code>~/.claude/cyberprompt</code> state. No plugin
+      system? <code>git clone</code> the repo anywhere and run
+      <code>install.sh</code>. Linux works out of the box; macOS needs GNU
+      <code>coreutils</code> + <code>flock</code> on <code>PATH</code>. Start a
+      new Claude Code session once after install; from then on, the sentinel
+      toggle is instant. Its measured defaults and test rig remain in
+      <code>harness/</code>.</p>
+    </div>
+  </div>
+  <p class="sol-note"><b>One repo, two native packages.</b> The Codex package lives in
+  <code>plugins/cyberprompt</code>, defaults its bounded forge to
+  <code>gpt-5.6-sol</code> at low effort, and includes
+  <code>$cyberprompt:cyberprompt</code> for operations plus
+  <code>$cyberprompt:gpt-5-6-sol</code> for current Sol prompt engineering.
+  That guide refreshes its working context from official documentation and current
+  primary sources on every use, dates its evidence through July 31, 2026 or later,
+  and supplies concrete deployment detail. It does not claim to change model
+  training data. The automatic per-prompt forge stays tool-less, uses its compact
+  release-tested contract, and fails open outside a Sol session. Both hosts keep
+  separate state, config, logs, and toggles; marketplace updates, reproducible gates,
+  and the harness live in this same repository.</p>
 </section>
 
 <section class="wrap lore">

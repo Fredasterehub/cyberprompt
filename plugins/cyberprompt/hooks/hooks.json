@@ -1,0 +1,18 @@
+{
+  "description": "CYBERPROMPT for Codex — fail-open advisory prompt normalization. Enable per user with the cyberprompt skill, then review and trust this hook with /hooks.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${PLUGIN_ROOT}/hooks/cyberprompt.sh\"",
+            "timeout": 200,
+            "statusMessage": "Running CYBERPROMPT",
+            "additionalContextLimit": 5000
+          }
+        ]
+      }
+    ]
+  }
+}
